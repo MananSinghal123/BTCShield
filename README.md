@@ -12,7 +12,8 @@ Reference (open-access): [Mitigating Decentralized Finance Liquidations with Rev
 
 - **Three-Phase System**: Initialization → Pre-Maturity → Maturity
 - **Black-Scholes Pricing**: λ* (optimal λ to check whether supporting is profitable)
-- **Premium (φ)**: Supporters deposit λ × C_t0 
+- **Premium (φ)**: Supporters deposit λ × C_t0
+ `λ = (Expected Liquidation Loss + Safety Margin)/C_t0`
 - **Early Termination**: k_re factor for borrower termination prior to maturity
 - **Real-time Analytics**: Forward liquidation risk, health indices, and simulations
 
