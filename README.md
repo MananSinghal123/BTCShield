@@ -11,10 +11,9 @@ Reference (open-access): [Mitigating Decentralized Finance Liquidations with Rev
 ## 🔑 Key Features
 
 - **Three-Phase System**: Initialization → Pre-Maturity → Maturity
-- **Black-Scholes Pricing**: λ* calculation using an adapted Black‑Scholes formulation
-- **Collateral Restraint**: Supporters deposit λ × C_t0 × p_t0
-- **Early Termination**: k_re factor for borrower rescue prior to maturity
-- **Eligibility Buffer**: k_SF screening and safety buffer B > 1
+- **Black-Scholes Pricing**: λ* (optimal λ to check whether supporting is profitable)
+- **Premium (φ)**: Supporters deposit λ × C_t0 
+- **Early Termination**: k_re factor for borrower termination prior to maturity
 - **Real-time Analytics**: Forward liquidation risk, health indices, and simulations
 
 ## 📚 BTCShield Backstop Implementation
@@ -41,20 +40,20 @@ We adapt Black–Scholes to estimate `λ*` as an approximation. Assumptions: log
 
 1) **Initialization**
 - Trigger: health factor < 1 (position becomes undercollateralized)
-- Action: supporters can deposit `λ × C_t0 × p_t0`
-- Eligibility: example screening with `k_SF` and buffer `B`
+- Action: supporters can deposit `λ × C_t0`
 
 2) **Pre‑Maturity**
-- Borrower may “rescue” by paying `premium × k_re` (0 < k_re < 1)
-- Position remains supported until maturity
+- Borrower may “terminate” by paying `C_re​=λ⋅C_t0​⋅(1+I_L​)⋅k_re` (0 < k_re < 1)
+(0 < IL < 1 is the interest rate which B agreed to pay for its loan when
+initiating the position P)
 
 3) **Maturity**
-- Supporter either exercises (takes position) or defaults
+- Supporter either exercises (takes position) or default hence loses the premium φ 
 - If exercised: supporter assumes position; otherwise, fallback liquidation
 
 ### Lifecycle → UI mapping
-- **Initialization** (health factor < 1): UI badge “Initialization”. Actions: supporter can “Support Position” (deposit `λ·C_t0·p_t0`). Borrower “Request Rescue” remains disabled until Pre‑Maturity.
-- **Pre‑Maturity** (`t0 < t < T`): UI badge “Pre‑Maturity – Rescue available”. Actions: borrower may “Rescue” by paying `premium × k_re`; supporter early exit (if implemented) may require penalty.
+- **Initialization** (health factor < 1): UI badge “Initialization”. Actions: supporter can “Support Position” (deposit `λ·C_t0`). Borrower “Request Rescue” remains disabled until Pre‑Maturity.
+- **Pre‑Maturity** (`t0 < t < T`): UI badge “Pre‑Maturity – Termination available”. Actions: borrower may “Terminate” by paying `C_re​=λ⋅C_t0​⋅(1+I_L​)⋅k_re`; supporter early exit (if implemented) may require penalty.
 - **Maturity** (`t = T`): UI badge “Maturity”. Actions: supporter can “Exercise” (take over vault if ITM) or “Default” (vault falls back to native liquidation).
 
 ## 🏗️ Architecture
