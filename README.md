@@ -178,6 +178,77 @@ const metrics = simulationEngine.calculateProtocolMetrics(vaults, supports, curr
 
 Simulation results adapted from Qin et al. (2023) indicate reversible‑call backstops can substantially reduce collateral release under certain parameter settings. BTCShield implements the same primitive; the exact benefit depends on chosen parameters (`λ`, `ΔT`, buffer `B`), asset liquidity, and market conditions. See `docs/simulations.md` for replication setup, datasets, and assumptions.
 
+
+
+## 🧭 Future Implementations
+
+### 🧾 Order Book–Driven Backstop Allocation
+
+Introducing an **order book–like mechanism** can make BTCShield more efficient, fair, and market-driven — especially when multiple supporters compete to back a position.
+
+#### 1️⃣ Why an Order Book?
+
+**Without it:**
+- All supporters are treated equally.
+- Early supporters may be overcompensated, while late ones get little or nothing.
+- λ is just split evenly, which doesn’t reflect individual risk/reward preferences.
+
+**With an order book:**
+- Supporters can bid for their share of backing by specifying:
+  - Amount of collateral they’re willing to lock  
+  - Minimum expected payoff (option premium)  
+  - Time duration of support  
+- The protocol then allocates support efficiently, similar to a market auction.
+
+---
+
+#### 2️⃣ How It Works
+
+**Borrower creates a position**, specifying:
+- Collateral \( C_{t0} \)  
+- Desired backstop coverage  
+- Liquidation threshold  
+
+**Supporters submit bids**, indicating:
+- λ or fraction of collateral they can support  
+- Expected return or premium  
+
+**Protocol allocates support**:
+- Sort bids based on **price/risk efficiency** (highest expected payoff per risk unit).  
+- Accept bids until total required coverage is reached.  
+- **Excess bids** are either rejected or queued for the next backstop round.
+
+---
+
+#### 3️⃣ Advantages
+
+- **Dynamic pricing:** λ becomes market-driven rather than fixed.  
+- **Capital efficiency:** Only required collateral is locked.  
+- **Fair rewards:** Supporters are compensated according to actual risk exposure.  
+- **Scalable:** Handles 1 or 100+ supporters without manual tuning.
+
+---
+
+#### 4️⃣ Variants
+
+- **Continuous auction:** Supporters can join/leave dynamically, λ adjusts in real time.  
+- **Discrete rounds:** New backstop rounds open periodically, λ recalculated each round.  
+- **Priority-based:** Early supporters get priority but λ scales inversely with participant count.
+
+---
+
+#### ✅ Summary
+
+An **order book–like mechanism** makes λ *market-driven, fair, and dynamically adaptive* in multi-supporter scenarios.  
+It effectively turns backstopping into a **micro-market**, perfectly aligning incentives among borrowers and supporters.
+
+---
+
+### 📅 Roadmap Position
+Planned for **Phase 2** of BTCShield, once the single-supporter and λ calibration layers are validated in production.
+
+
+
 ## 🔒 Security Considerations
 
 ### Smart Contract Integration (future‑ready)
@@ -203,6 +274,7 @@ BTCShield relies on on‑chain oracles (e.g., Pyth / Stork). We suggest aggregat
 ```bash
 npm test
 ```
+
 
 ## 📑 References
 
