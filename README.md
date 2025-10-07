@@ -4,77 +4,74 @@ A professional implementation of the BTCShield backstop protection system using 
 
 ## 🎯 Overview
 
-BTCShield implements a three-phase backstop mechanism to mitigate DeFi liquidations through reversible call options, specifically designed for Mezo Network's BTC/MUSD lending environment.
+BTCShield implements a three-phase backstop mechanism to mitigate DeFi liquidations through reversible call options, specifically designed for Mezo Network's BTC/MUSD lending environment. The design draws on the academic foundation of reversible call options for liquidation mitigation, with an adapted Black‑Scholes pricing layer for premium calibration.
 
-### Key Features
+Reference (open-access): [Mitigating Decentralized Finance Liquidations with Reversible Call Options](https://arxiv.org/pdf/2303.15162)
+
+## 🔑 Key Features
 
 - **Three-Phase System**: Initialization → Pre-Maturity → Maturity
-- **Black-Scholes Pricing**: λ* calculation using adapted Black-Scholes formula
+- **Black-Scholes Pricing**: λ* calculation using an adapted Black‑Scholes formulation
 - **Collateral Restraint**: Supporters deposit λ × C_t0 × p_t0
-- **Early Termination**: k_re factor for borrower rescue mechanism
-- **Fallback Buffer**: k_SF eligibility and buffer system
-- **Real-time Analytics**: Comprehensive risk metrics and simulations
+- **Early Termination**: k_re factor for borrower rescue prior to maturity
+- **Eligibility Buffer**: k_SF screening and safety buffer B > 1
+- **Real-time Analytics**: Forward liquidation risk, health indices, and simulations
 
 ## 📚 BTCShield Backstop Implementation
 
-### Core Formula
-
-The implementation uses the Black-Scholes adapted formula from the paper:
+### Core Formula (adapted premium)
 
 ```
 λ* = (p_t0 e^(–r_f T) N(d1) – K e^(–IL T) N(d2)) / (C_t0 · p_t0)
 ```
 
 Where:
-- `λ*` = Optimal premium factor
-- `p_t0` = Current BTC price
-- `K` = Liquidation price (strike price)
-- `T` = Time to maturity
-- `r_f` = Risk-free rate
-- `IL` = Impermanent loss rate
-- `N(d1), N(d2)` = Cumulative normal distribution
+- `λ*` = optimal premium factor
+- `p_t0` = current BTC price
+- `K` = liquidation (strike) price
+- `T` = time to maturity (in years)
+- `r_f` = risk‑free/foreign rate
+- `IL` = protocol borrowing interest (effective interest on outstanding debt)
+- `N(d1), N(d2)` = standard normal cumulative distribution
 
-### Three Phases
+**Note on Black–Scholes usage**
+We adapt Black–Scholes to estimate `λ*` as an approximation. Assumptions: log‑normal pricing, continuous trading, frictionless markets. Crypto markets deviate from these assumptions; treat outputs as indicative. Inputs: volatility `σ` estimated from historical BTC returns (default: 30‑day rolling), time to maturity `T` expressed in years (e.g., 6 hours = 6/8760), `r_f` a risk‑free rate, and `IL` the protocol borrowing interest rate. See `docs/pricing.md` for parameter defaults and estimation details.
 
-#### 1. Initialization Phase
-- Triggered when health factor < 1
-- Supporters can deposit `λ × C_t0 × p_t0`
-- Support eligibility: `k_SF = CR_t0(P) · (θ + B) < 1`
+### Lifecycle Phases
 
-#### 2. Pre-Maturity Phase
-- Borrower can "rescue" by paying `premium × k_re`
-- Early termination factor: `0 < k_re < 1`
-- Vault remains supported until maturity
+1) **Initialization**
+- Trigger: health factor < 1 (position becomes undercollateralized)
+- Action: supporters can deposit `λ × C_t0 × p_t0`
+- Eligibility: example screening with `k_SF` and buffer `B`
 
-#### 3. Maturity Phase
-- Supporter can exercise option or default
-- If exercised: supporter takes over vault
-- If defaulted: fallback to native liquidation
+2) **Pre‑Maturity**
+- Borrower may “rescue” by paying `premium × k_re` (0 < k_re < 1)
+- Position remains supported until maturity
+
+3) **Maturity**
+- Supporter either exercises (takes position) or defaults
+- If exercised: supporter assumes position; otherwise, fallback liquidation
+
+### Lifecycle → UI mapping
+- **Initialization** (health factor < 1): UI badge “Initialization”. Actions: supporter can “Support Position” (deposit `λ·C_t0·p_t0`). Borrower “Request Rescue” remains disabled until Pre‑Maturity.
+- **Pre‑Maturity** (`t0 < t < T`): UI badge “Pre‑Maturity – Rescue available”. Actions: borrower may “Rescue” by paying `premium × k_re`; supporter early exit (if implemented) may require penalty.
+- **Maturity** (`t = T`): UI badge “Maturity”. Actions: supporter can “Exercise” (take over vault if ITM) or “Default” (vault falls back to native liquidation).
 
 ## 🏗️ Architecture
 
-### Core Components
+### Core Modules
 
-```
-lib/miqado/
-├── blackScholes.ts      # Black-Scholes pricing engine
-├── vaultManager.ts      # Three-phase vault management
-└── simulationEngine.ts  # BTC price simulation & analysis
-
-components/miqado/
-├── MiqadoVault.tsx      # Three-phase vault interface
-└── SupporterInterface.tsx # λ vs λ* analysis
-
-types/
-└── index.ts            # Miqado-specific type definitions
-```
+- Pricing engine (Black‑Scholes adaptation, λ*)
+- Backstop manager (phase transitions, support/rescue/settle flows)
+- Simulation engine (BTC price paths, health/risk trajectories)
+- UI components (dashboard, risk panels, supporter flows)
 
 ### Data Flow
 
-1. **Vault Creation**: Health factor < 1 triggers initialization
-2. **Support Addition**: Supporters deposit collateral with λ premium
-3. **Phase Transitions**: Automatic progression based on time and conditions
-4. **Settlement**: Exercise or default at maturity
+1. **Position Monitoring**: track health factor and thresholds
+2. **Backstop Provision**: accept support with premium λ
+3. **Phase Transitions**: by time and state (init → pre‑maturity → maturity)
+4. **Settlement**: exercise vs. fallback handling
 
 ## 🚀 Getting Started
 
@@ -94,26 +91,24 @@ Navigate to [http://localhost:3000](http://localhost:3000)
 
 ## 📊 Key Metrics
 
-### Protocol Metrics
-
 - **Collateral Restraint**: Total BTC locked by supporters
 - **Health Factor Recovery**: Average improvement through support
-- **Liquidation Avoidance Rate**: Percentage of successful mitigations
-- **Supporter Default Rate**: Risk assessment for supporters
+- **Liquidation Avoidance Rate**: Percentage of mitigations
+- **Supporter Default Probability**: Counterparty risk proxy
 
 ### Risk Analytics
 
-- **λ* vs λ Comparison**: Real-time pricing analysis
-- **Black-Scholes Greeks**: Delta, Gamma, Theta, Vega
-- **VaR/ES Calculations**: Value at Risk and Expected Shortfall
-- **Stress Testing**: BTC price shock scenarios
+- **λ* vs λ Comparison**: Pricing alignment check
+- **Stress Tests**: BTC price shock scenarios
 
-## 🔧 API Reference
+**Note:** Greeks (Delta, Gamma, Theta, Vega) and VaR/ES are planned/experimental features. If enabled, see `docs/analytics.md` for methodology, assumptions, and limitations.
 
-### BTCShieldVaultManager
+## 🔧 API / Engine Examples
+
+### Backstop Manager (examples)
 
 ```typescript
-// Create vault
+// Create position
 const vault = vaultManager.createVault({
   id: 'vault-1',
   borrower: '0x...',
@@ -133,153 +128,97 @@ const support = vaultManager.addSupport(
   1.1   // buffer
 )
 
-// Rescue vault
+// Borrower rescue
 vaultManager.rescueVault('vault-1', 'support-id')
 
-// Settle at maturity
+// Settlement at maturity
 vaultManager.settleAtMaturity('vault-1', 'support-id', true)
 ```
 
-### Black-Scholes Engine
+### Pricing Engine (λ* calculation)
 
 ```typescript
-// Calculate optimal λ*
 const result = calculateLambdaStar({
-  S: 67420,        // Current BTC price
-  K: 57307,        // Liquidation price
-  T: 0.0137,       // Time to maturity (years)
-  r_f: 0.05,       // Risk-free rate
-  IL: 0.02,        // Impermanent loss
-  sigma: 0.4       // Volatility
-}, 2.5) // Collateral amount
+  S: 67420,        // current BTC price
+  K: 57307,        // liquidation price
+  T: 0.0137,       // time to maturity in years (≈ 6 hours)
+  r_f: 0.05,       // risk‑free rate
+  IL: 0.02,        // protocol borrowing interest rate
+  sigma: 0.4       // volatility
+}, 2.5) // collateral amount
 
-console.log(result.lambdaStar) // 0.18 (18%)
+console.log(result.lambdaStar)
 ```
 
-### Simulation Engine
+### Simulation Engine (sketch)
 
 ```typescript
-// Run comprehensive simulation
 const results = simulationEngine.runSimulation({
-  vault: vault,
-  support: support,
+  vault,
+  support,
   btcPriceHistory: [65000, 66000, 67000, 67420],
   timeSteps: [t1, t2, t3, t4]
 })
 
-// Calculate protocol metrics
-const metrics = simulationEngine.calculateProtocolMetrics(
-  vaults, supports, currentBtcPrice
-)
+const metrics = simulationEngine.calculateProtocolMetrics(vaults, supports, currentBtcPrice)
 ```
 
 ## 🎨 UI Components
 
-### BTCShieldVault
-
-Displays vault state with three-phase indicators:
-- **Initialization**: Yellow badge, support button
-- **Pre-Maturity**: Blue badge, rescue button
-- **Maturity**: Purple badge, exercise/default buttons
-
-### SupporterInterface
-
-Interactive λ vs λ* analysis:
-- Real-time Black-Scholes calculation
-- Risk metrics (profit probability, max loss)
-- Greeks display (d1, d2, N(d1), N(d2))
-- Historical λ* trend chart
+- **BTCShieldVault**: Phase indicators and actions (support, rescue, settle)
+- **Supporter Panel**: λ vs λ* and ROI visuals
+- **Risk Engine Panel**: Health indices, liquidation probabilities, forecasts
 
 ## 📈 Simulation & Analysis
 
-### BTC Price History Analysis
+- **Collateral Release Reduction**: Preserved collateral under backstop
+- **Health Factor Recovery**: Trajectory with support
+- **Supporter Profitability**: ROI distributions
+- **Scenario Tests**: Shock trajectories and recovery
 
-The simulation engine analyzes historical BTC price movements to estimate:
-
-- **Collateral Release Reduction**: How much collateral is preserved
-- **Health Factor Recovery**: Improvement in vault health
-- **Supporter Default Probability**: Risk of supporter failure
-- **Expected Supporter Profit**: Average returns
-
-### Stress Testing
-
-Multiple scenarios tested:
-- **Mild Shock**: ±10% BTC price movement
-- **Moderate Shock**: ±20% BTC price movement  
-- **Severe Shock**: ±30% BTC price movement
-
-### Risk Metrics
-
-- **Value at Risk (VaR)**: 95% confidence level
-- **Expected Shortfall (ES)**: Tail risk assessment
-- **Greeks Analysis**: Sensitivity to market parameters
+Simulation results adapted from Qin et al. (2023) indicate reversible‑call backstops can substantially reduce collateral release under certain parameter settings. BTCShield implements the same primitive; the exact benefit depends on chosen parameters (`λ`, `ΔT`, buffer `B`), asset liquidity, and market conditions. See `docs/simulations.md` for replication setup, datasets, and assumptions.
 
 ## 🔒 Security Considerations
 
-### Smart Contract Integration
+### Smart Contract Integration (future‑ready)
 
-The frontend is designed to integrate with Mezo Network smart contracts:
-
-- **Collateral Locking**: Supporters' collateral locked until maturity
-- **Automatic Settlement**: Time-based phase transitions
-- **Fallback Mechanism**: Native liquidation if supporter defaults
+- **Collateral Locking**: Supporters’ collateral until maturity
+- **Automatic Settlement**: Time‑based state transitions
+- **Fallback Mechanism**: Fallback liquidation if supporter defaults
 
 ### Risk Management
 
-- **Support Eligibility**: k_SF factor prevents over-leveraging
-- **Buffer System**: B > 1 provides safety margin
-- **Early Termination**: k_re factor allows borrower rescue
+- **Support Eligibility**: k_SF reduces over‑exposure
+- **Buffer System**: B > 1 safety margin
+- **Early Termination**: k_re enables borrower rescue
+
+**Fallback & buffer**
+BTCShield is layered atop Mezo’s native liquidation. If no supporter steps in or a supporter defaults at maturity, the system falls back to native liquidation rules. The buffer parameter `B > 1` tunes eligibility: only positions with `k_SF = CR_t0(P) · (θ + B) < 1` are eligible. See `docs/parameters.md` for demo defaults.
+
+**Oracles & Data Integrity**
+BTCShield relies on on‑chain oracles (e.g., Pyth / Stork). We suggest aggregating sources and using short TWAP fallbacks and sanity checks (max price delta per block) to mitigate flash‑feeds and oracle manipulation. See `docs/oracles.md` for details.
 
 ## 🧪 Testing
-
-### Unit Tests
 
 ```bash
 npm test
 ```
 
-### Simulation Tests
+## 📑 References
 
-```bash
-npm run test:simulation
-```
-
-### Integration Tests
-
-```bash
-npm run test:integration
-```
-
-## 📝 Paper References
-
-This implementation is based on:
-
-> Qin, K., Zhou, L., Gamal, A. E., & Gervais, A. (2022). Mitigating DeFi Liquidations with Reversible Call Options. *Proceedings of the 2022 ACM SIGSAC Conference on Computer and Communications Security*.
-
-### Key Equations Implemented
-
-- **Equation 1**: λ* pricing formula
-- **Equation 8**: Support eligibility k_SF
-- **Equation 12**: Health factor recovery
-- **Appendix A**: Black-Scholes adaptation
+- Qin, K., Ernstberger, J., Zhou, L., Jovanovic, P., Gervais, A. “Mitigating Decentralized Finance Liquidations with Reversible Call Options.” 2023. [arXiv:2303.15162](https://arxiv.org/pdf/2303.15162)
 
 ## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
-3. Implement Miqado paper features
-4. Add tests for new functionality
+3. Implement features aligned with reversible‑call backstops (see `docs/spec.md`); avoid using the paper’s naming in code or UI
+4. Add tests
 5. Submit a pull request
 
 ## 📄 License
 
 MIT License - see LICENSE file for details.
-
-## 🙏 Acknowledgments
-
-- Qin et al. for the original Miqado paper
-- Mezo Network for the BTC lending infrastructure
-- Black-Scholes model for option pricing foundation
 
 ---
 
