@@ -52,26 +52,15 @@ initiating the position P)
 - Supporter either exercises (takes position) or default hence loses the premium φ 
 - If exercised: supporter assumes position; otherwise, fallback liquidation
 
-### Lifecycle → UI mapping
-- **Initialization** (health factor < 1): UI badge “Initialization”. Actions: supporter can “Support Position” (deposit `λ·C_t0`). Borrower “Request Rescue” remains disabled until Pre‑Maturity.
-- **Pre‑Maturity** (`t0 < t < T`): UI badge “Pre‑Maturity – Termination available”. Actions: borrower may “Terminate” by paying `C_re​=λ⋅C_t0​⋅(1+I_L​)⋅k_re`; supporter early exit (if implemented) may require penalty.
-- **Maturity** (`t = T`): UI badge “Maturity”. Actions: supporter can “Exercise” (take over vault if ITM) or “Default” (vault falls back to native liquidation).
-
 ## 🏗️ Architecture
 
 ### Core Modules
 
-- Pricing engine (Black‑Scholes adaptation, λ*)
-- Backstop manager (phase transitions, support/rescue/settle flows)
-- Simulation engine (BTC price paths, health/risk trajectories)
-- UI components (dashboard, risk panels, supporter flows)
+
 
 ### Data Flow
 
-1. **Position Monitoring**: track health factor and thresholds
-2. **Backstop Provision**: accept support with premium λ
-3. **Phase Transitions**: by time and state (init → pre‑maturity → maturity)
-4. **Settlement**: exercise vs. fallback handling
+
 
 ## 🚀 Getting Started
 
@@ -91,21 +80,15 @@ Navigate to [http://localhost:3000](http://localhost:3000)
 
 ## 📊 Key Metrics
 
-- **Collateral Restraint**: Total BTC locked by supporters
-- **Health Factor Recovery**: Average improvement through support
-- **Liquidation Avoidance Rate**: Percentage of mitigations
-- **Supporter Default Probability**: Counterparty risk proxy
+
 
 ### Risk Analytics
-
 - **λ* vs λ Comparison**: Pricing alignment check
-- **Stress Tests**: BTC price shock scenarios
 
-**Note:** Greeks (Delta, Gamma, Theta, Vega) and VaR/ES are planned/experimental features. If enabled, see `docs/analytics.md` for methodology, assumptions, and limitations.
 
 ## 🔧 API / Engine Examples
 
-### Backstop Manager (examples)
+### Backstop Manager / RCO Manager (examples) 
 
 ```typescript
 // Create position
