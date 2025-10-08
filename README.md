@@ -13,7 +13,7 @@ Reference (open-access): [Mitigating Decentralized Finance Liquidations with Rev
 - **Three-Phase System**: Initialization → Pre-Maturity → Maturity
 - **Premium (φ)**: Supporters deposit λ × C_t0  
   `λ = (Expected Liquidation Loss + Safety Margin)/C_t0`
-- **λ* Calculation (Black-Scholes adaptation)**:
+- λ* Calculation :
   ```
   λ* = (p_t0 e^(–r_f T) N(d1) – K e^(–I_l T) N(d2)) / (C_t0 · p_t0)
   ```
