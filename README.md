@@ -43,7 +43,7 @@ Reference (open-access): [Mitigating Decentralized Finance Liquidations with Rev
     - (0 < IL < 1 is the interest rate which B agreed to pay for its loan when initiating the position P)
 3. **Maturity**
     - Supporter either exercises (takes position) or defaults and loses the premium φ
-    - If exercised: supporter assumes position; otherwise, fallback liquidation
+    - If exercised: supporter assumes position;
 
 ## 🏗️ Architecture
 
