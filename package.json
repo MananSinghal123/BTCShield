@@ -9,6 +9,11 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@pythnetwork/hermes-client": "^2.0.0",
+    "@pythnetwork/price-service-client": "^1.9.0",
+    "@pythnetwork/pyth-evm-js": "^2.0.0-alpha2",
+    "@rainbow-me/rainbowkit": "^2.2.8",
+    "@tanstack/react-query": "^5.90.2",
     "autoprefixer": "^10.4.21",
     "clsx": "^2.1.1",
     "framer-motion": "^11.3.24",
@@ -17,7 +22,9 @@
     "react": "^18",
     "react-dom": "^18",
     "recharts": "^2.8.0",
-    "tailwind-merge": "^2.4.0"
+    "tailwind-merge": "^2.4.0",
+    "viem": "^2.38.0",
+    "wagmi": "^2.18.0"
   },
   "devDependencies": {
     "@types/node": "^20",
