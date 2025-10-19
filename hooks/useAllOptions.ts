@@ -60,32 +60,50 @@ export function useAllOptions() {
   // Fetch available options for supporters
   async function fetchAvailableOptions() {
     const currentBlock = await client.getBlockNumber();
-    const fromBlock = currentBlock - 10000n; // Last ~2 days
+    const fromBlock = 8067900n; // Last ~2 days
+    const maxBlockRange = 10000n; // RPC limit
 
-    // Get all initialized options using viem's event filtering
-    const events = await client.getLogs({
-      address: CONTRACT_ADDRESS,
-      event: {
-        type: "event",
-        name: "OptionInitialized",
-        inputs: [
-          { type: "address", name: "borrower", indexed: true },
-          { type: "uint256", name: "lambda" },
-          { type: "uint256", name: "premium" },
-          { type: "uint256", name: "strikeCR" },
-          { type: "uint256", name: "maturityTime" },
-        ],
-      },
-      fromBlock,
-      toBlock: "latest",
-    });
+    // Chunk the block range into batches
+    const allEvents = [];
+    let currentFromBlock = fromBlock;
 
-    console.log("Fetched OptionInitialized events:", events);
+    while (currentFromBlock <= currentBlock) {
+      const currentToBlock =
+        currentFromBlock + maxBlockRange - 1n > currentBlock
+          ? currentBlock
+          : currentFromBlock + maxBlockRange - 1n;
+
+      console.log(
+        `Fetching events from block ${currentFromBlock} to ${currentToBlock}`
+      );
+
+      const events = await client.getLogs({
+        address: CONTRACT_ADDRESS,
+        event: {
+          type: "event",
+          name: "OptionInitialized",
+          inputs: [
+            { type: "address", name: "borrower", indexed: true },
+            { type: "uint256", name: "lambda" },
+            { type: "uint256", name: "premium" },
+            { type: "uint256", name: "strikeCR" },
+            { type: "uint256", name: "maturityTime" },
+          ],
+        },
+        fromBlock: currentFromBlock,
+        toBlock: currentToBlock,
+      });
+
+      allEvents.push(...events);
+      currentFromBlock = currentToBlock + 1n;
+    }
+
+    console.log("Fetched OptionInitialized events:", allEvents);
 
     // const price = await priceFeed.read.fetchPrice();
     const availableOptions = [];
 
-    for (const event of events) {
+    for (const event of allEvents) {
       const borrower = event.args.borrower;
       const option = (await contract.read.getOption([
         borrower,

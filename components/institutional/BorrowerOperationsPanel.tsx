@@ -16,6 +16,7 @@ import {
 import { useBorrowerOperations } from "@/hooks/useBorrowerOperations";
 import { useBTCPrice } from "@/hooks/useBtcPrice";
 import { useTroveManager, TroveStatus } from "@/hooks/useTroveManager";
+import { useInitBtcPrice } from "@/hooks/useInitBtcPrice";
 
 export default function BorrowerOperationsPanel() {
   const {
@@ -32,28 +33,12 @@ export default function BorrowerOperationsPanel() {
   } = useBorrowerOperations();
 
   // BTC Price hook
-  const {
-    price: btcPrice,
-    loading: btcLoading,
-    error: btcError,
-  } = useBTCPrice();
+  const { price, loading, error } = useBTCPrice();
+  const { btcPrice } = useInitBtcPrice();
 
   // Trove Manager hook
-  const {
-    getCompleteTroveData,
-    getSystemStats,
-    getCurrentICR,
-    address: troveAddress,
-  } = useTroveManager();
-
-  // State for rates
-  // const [rates, setRates] = useState<{
-  //   borrowingRate: number;
-  //   redemptionRate: number;
-  // }>({
-  //   borrowingRate: 0,
-  //   redemptionRate: 0,
-  // });
+  const { getCompleteTroveData, getSystemStats, getCurrentICR, address } =
+    useTroveManager();
 
   // State for minimum net debt
   const [minNetDebt, setMinNetDebt] = useState<number>(0);
@@ -61,14 +46,14 @@ export default function BorrowerOperationsPanel() {
   // State for trove data
   const [troveData, setTroveData] = useState<any>(null);
   const [systemStats, setSystemStats] = useState<any>(null);
-  const [troveLoading, setTroveLoading] = useState(false);
-  const [currentICR, setCurrentICR] = useState<string>("");
+  const [troveLoading, setTroveLoading] = useState<boolean>(false);
+  const [currentICR, setCurrentICR] = useState<number>(0);
 
   // State for form inputs
-  const [collateralAmount, setCollateralAmount] = useState("");
-  const [musdAmount, setMusdAmount] = useState("");
-  const [openTroveDebt, setOpenTroveDebt] = useState("");
-  const [openTroveCollateral, setOpenTroveCollateral] = useState("");
+  const [collateralAmount, setCollateralAmount] = useState<number>(0);
+  const [musdAmount, setMusdAmount] = useState<number>(0);
+  const [openTroveDebt, setOpenTroveDebt] = useState<number>(0);
+  const [openTroveCollateral, setOpenTroveCollateral] = useState<number>(0);
 
   // Loading states for each operation
   const [loadingStates, setLoadingStates] = useState({
@@ -81,46 +66,17 @@ export default function BorrowerOperationsPanel() {
     closeTrove: false,
   });
 
-  // const refreshTroveData = async () => {
-  //   if (!isConnected || !btcPrice) return;
-  //   setTroveLoading(true);
-  //   try {
-  //     const troveInfo = await getCompleteTroveData();
-  //     const icr = await getCurrentICR();
-  //     const systemInfo = await getSystemStats(btcPrice?.toString());
-  //     setTroveData(troveInfo);
-  //     setSystemStats(systemInfo);
-  //     setCurrentICR(icr);
-  //   } catch (error) {
-  //     console.error("Error fetching trove data:", error);
-  //   } finally {
-  //     setTroveLoading(false);
-  //   }
-  // };
-
-  // Fetch trove data when connected and BTC price is available
-
   // Add error state
   const [troveError, setTroveError] = useState<string | null>(null);
 
-  // Update the fetch function
   const fetchTroveData = useCallback(async () => {
-    console.log("fetchTroveData called:", {
-      isConnected,
-      btcPrice,
-      btcLoading,
-    }); // Debug log
-
-    if (!isConnected) {
+    // This guard clause is important! It prevents fetching when price is invalid.
+    if (!isConnected || !price || price <= 0) {
       setTroveData(null);
       setSystemStats(null);
-      setCurrentICR("");
-      return;
-    }
-
-    // Wait for BTC price to be available
-    if (!btcPrice || btcPrice <= 0) {
-      console.log("BTC price not available yet:", btcPrice);
+      setCurrentICR(0);
+      // It's often better to not set loading to false here,
+      // to avoid a screen flicker if price is just initializing.
       return;
     }
 
@@ -128,15 +84,16 @@ export default function BorrowerOperationsPanel() {
     setTroveError(null);
 
     try {
-      console.log("Fetching with BTC price:", btcPrice); // Debug log
-
+      console.log("Fetching trove data with BTC Price:", btcPrice);
       const troveInfo = await getCompleteTroveData();
-      const icr = await getCurrentICR(undefined, btcPrice.toString());
-      const systemInfo = await getSystemStats(btcPrice.toString());
+      // Pass the stable price value into your functions
+      const icr = await getCurrentICR(undefined, btcPrice || 0);
+      const systemInfo = await getSystemStats(btcPrice || 0);
 
       setTroveData(troveInfo);
       setSystemStats(systemInfo);
       setCurrentICR(icr);
+      console.log("Fetched trove data:", troveInfo, systemInfo, icr);
     } catch (error) {
       console.error("Error fetching trove data:", error);
       setTroveError(
@@ -145,12 +102,13 @@ export default function BorrowerOperationsPanel() {
     } finally {
       setTroveLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isConnected, btcPrice]);
+  }, [isConnected, btcPrice]); // Keep dependencies here
 
+  // Correctly trigger the effect when fetchTroveData is recreated
   useEffect(() => {
+    setTroveLoading(true);
     fetchTroveData();
-  }, [fetchTroveData]); // Now safe to include
+  }, [btcPrice]);
 
   useEffect(() => {
     const fetchMinNetDebt = async () => {
@@ -244,7 +202,7 @@ export default function BorrowerOperationsPanel() {
       await waitForTransaction(hash);
       alert("✅ Collateral added successfully!");
       await fetchTroveData(); // Add this
-      setCollateralAmount("");
+      setCollateralAmount(0);
     } catch (err: any) {
       alert(`❌ Failed to add collateral:\n${extractErrorMessage(err)}`);
     } finally {
@@ -264,7 +222,7 @@ export default function BorrowerOperationsPanel() {
       await waitForTransaction(hash);
       alert("✅ Collateral withdrawn successfully!");
       await fetchTroveData(); // Add this
-      setCollateralAmount("");
+      setCollateralAmount(0);
     } catch (err: any) {
       alert(`❌ Failed to withdraw collateral:\n${extractErrorMessage(err)}`);
     } finally {
@@ -284,7 +242,7 @@ export default function BorrowerOperationsPanel() {
       await waitForTransaction(hash);
       alert("✅ MUSD borrowed successfully!");
       await fetchTroveData(); // Add this
-      setMusdAmount("");
+      setMusdAmount(0);
     } catch (err: any) {
       alert(`❌ Failed to borrow MUSD:\n${extractErrorMessage(err)}`);
     } finally {
@@ -304,7 +262,7 @@ export default function BorrowerOperationsPanel() {
       await waitForTransaction(hash);
       alert("✅ MUSD repaid successfully!");
       await fetchTroveData(); // Add this
-      setMusdAmount("");
+      setMusdAmount(0);
     } catch (err: any) {
       alert(`❌ Failed to repay MUSD:\n${extractErrorMessage(err)}`);
     } finally {
@@ -344,8 +302,8 @@ export default function BorrowerOperationsPanel() {
       await waitForTransaction(hash);
       alert("✅ Trove opened successfully!");
       await fetchTroveData(); // Add this
-      setOpenTroveDebt("");
-      setOpenTroveCollateral("");
+      setOpenTroveDebt(0);
+      setOpenTroveCollateral(0);
     } catch (err: any) {
       alert(`❌ Failed to open trove:\n${extractErrorMessage(err)}`);
     } finally {
@@ -377,32 +335,16 @@ export default function BorrowerOperationsPanel() {
     }
   };
 
-  // const calculateMaxMUSD = (btcAmount: string, currentBTCPrice: number) => {
-  //   if (!btcAmount || !currentBTCPrice) return 0;
-  //   const collateralValue = parseFloat(btcAmount) * currentBTCPrice;
-  //   const MCR = 1.1;
-  //   const maxBorrow = collateralValue / MCR;
-  //   return maxBorrow;
-  // };
-
   // Calculate maximum MUSD that can be borrowed based on collateral
   // Using MCR (Minimum Collateralization Ratio) of 1.1
   // Formula: Max MUSD = (BTC Amount × BTC Price) / MCR
   // Example: 0.03 BTC × 100,000 USD / 1.1 = 2,727 MUSD
   const maxMUSD = useMemo(() => {
-    if (!openTroveCollateral || !btcPrice) return 0;
-    const collateralValue = parseFloat(openTroveCollateral) * btcPrice;
+    if (!openTroveCollateral || !price) return 0;
+    const collateralValue = openTroveCollateral * price;
     const MCR = 1.1;
     return collateralValue / MCR;
-  }, [openTroveCollateral, btcPrice]);
-
-  // If you need to use this for other inputs (e.g. collateralAmount), you can create another memoized value:
-  // const maxMUSDForCollateralAmount = useMemo(() => {
-  //   if (!collateralAmount || !btcPrice) return 0;
-  //   const collateralValue = parseFloat(collateralAmount) * btcPrice;
-  //   const MCR = 1.1;
-  //   return collateralValue / MCR;
-  // }, [collateralAmount, btcPrice]);
+  }, [openTroveCollateral, price]);
 
   // Truncate address for display
   // const truncateAddress = (addr: string) => {
@@ -428,105 +370,6 @@ export default function BorrowerOperationsPanel() {
               Your Trove
             </h3>
           </div>
-
-          {/* {troveLoading ? (
-            <div className="space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="flex justify-between items-center">
-                  <div className="h-4 bg-white/5 rounded w-1/3 animate-pulse"></div>
-                  <div className="h-4 bg-white/5 rounded w-1/4 animate-pulse"></div>
-                </div>
-              ))}
-            </div>
-          ) : troveData ? (
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-mezo-dark-300">Status</span>
-                <span className="text-sm font-semibold text-mezo-dark-50">
-                  {troveData.isActive ? (
-                    <span className="text-green-400">Active</span>
-                  ) : (
-                    <span className="text-red-400">Inactive</span>
-                  )}
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-mezo-dark-300">
-                  Collateral (BTC)
-                </span>
-                <span className="font-mono font-semibold text-mezo-dark-50">
-                  {parseFloat(troveData.totalCollateral).toFixed(6)}
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-mezo-dark-300">Total Debt</span>
-                <span className="font-mono font-semibold text-mezo-dark-50">
-                  $
-                  {parseFloat(troveData.totalDebt).toLocaleString(undefined, {
-                    maximumFractionDigits: 2,
-                  })}{" "}
-                  MUSD
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-mezo-dark-300">
-                  Interest Rate
-                </span>
-                <span className="font-mono font-semibold text-mezo-dark-50">
-                  {(troveData.interestRate / 100).toFixed(2)}%
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-mezo-dark-300">Current ICR</span>
-                <span className="font-mono font-semibold text-mezo-dark-50">
-                  {currentICR &&
-                  isFinite(Number(currentICR)) &&
-                  Number(currentICR) < 1e6
-                    ? parseFloat(currentICR).toFixed(4)
-                    : currentICR && Number(currentICR) >= 1e6
-                    ? "N/A"
-                    : "-"}
-                </span>
-              </div>
-
-              <div className="border-t border-white/10 pt-3 mt-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-mezo-dark-300">
-                    Max Borrowing Capacity
-                  </span>
-                  <span className="font-mono font-semibold text-mezo-dark-50">
-                    $
-                    {parseFloat(troveData.maxBorrowingCapacity).toLocaleString(
-                      undefined,
-                      {
-                        maximumFractionDigits: 0,
-                      }
-                    )}{" "}
-                    MUSD
-                  </span>
-                </div>
-              </div>
-
-              {troveData.hasPendingRewards && (
-                <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-3">
-                  <p className="text-xs text-yellow-300">
-                    Pending rewards available to claim
-                  </p>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-mezo-dark-300">No trove data available</p>
-              <p className="text-xs text-mezo-dark-400 mt-1">
-                Connect your wallet to view trove details
-              </p>
-            </div>
-          )} */}
 
           {troveLoading ? (
             <div className="space-y-4">
@@ -609,7 +452,7 @@ export default function BorrowerOperationsPanel() {
                     {currentICR &&
                     isFinite(Number(currentICR)) &&
                     Number(currentICR) < 1e6
-                      ? parseFloat(currentICR).toFixed(4)
+                      ? currentICR.toFixed(4)
                       : currentICR && Number(currentICR) >= 1e6
                       ? "N/A"
                       : "-"}
@@ -751,7 +594,9 @@ export default function BorrowerOperationsPanel() {
                 <input
                   type="number"
                   value={openTroveCollateral}
-                  onChange={(e) => setOpenTroveCollateral(e.target.value)}
+                  onChange={(e) =>
+                    setOpenTroveCollateral(parseFloat(e.target.value) || 0)
+                  }
                   placeholder="0.00"
                   className="w-full px-4 py-3 bg-white/[0.02] border border-white/[0.08] rounded-xl text-mezo-dark-50 font-mono focus:border-purple-500/50 focus:outline-none placeholder-mezo-dark-400"
                   step="0.001"
@@ -762,13 +607,12 @@ export default function BorrowerOperationsPanel() {
                   BTC
                 </div>
               </div>
-              {openTroveCollateral && btcPrice && (
+              {openTroveCollateral && price && (
                 <div className="text-xs text-mezo-dark-300 mt-1">
                   ≈ $
-                  {(parseFloat(openTroveCollateral) * btcPrice).toLocaleString(
-                    undefined,
-                    { maximumFractionDigits: 2 }
-                  )}{" "}
+                  {(openTroveCollateral * price).toLocaleString(undefined, {
+                    maximumFractionDigits: 2,
+                  })}{" "}
                   USD
                 </div>
               )}
@@ -783,7 +627,9 @@ export default function BorrowerOperationsPanel() {
                 <input
                   type="number"
                   value={openTroveDebt}
-                  onChange={(e) => setOpenTroveDebt(e.target.value)}
+                  onChange={(e) =>
+                    setOpenTroveDebt(parseFloat(e.target.value) || 0)
+                  }
                   placeholder="0.00"
                   className="w-full px-4 py-3 bg-white/[0.02] border border-white/[0.08] rounded-xl text-mezo-dark-50 font-mono focus:border-purple-500/50 focus:outline-none placeholder-mezo-dark-400"
                   step="0.01"
@@ -794,13 +640,13 @@ export default function BorrowerOperationsPanel() {
                   MUSD
                 </div>
               </div>
-              {openTroveCollateral && btcPrice && (
+              {openTroveCollateral && price && (
                 <div className="text-xs text-mezo-dark-300 mt-1">
                   Max Debt: $
                   {maxMUSD.toLocaleString(undefined, {
-                    maximumFractionDigits: 0,
+                    maximumFractionDigits: 2,
                   })}
-                  {openTroveDebt && parseFloat(openTroveDebt) > maxMUSD && (
+                  {openTroveDebt && openTroveDebt > maxMUSD && (
                     <span className="text-red-400 ml-2">
                       ⚠️ Exceeds max debt
                     </span>
@@ -906,7 +752,9 @@ export default function BorrowerOperationsPanel() {
                 <input
                   type="number"
                   value={collateralAmount}
-                  onChange={(e) => setCollateralAmount(e.target.value)}
+                  onChange={(e) =>
+                    setCollateralAmount(parseFloat(e.target.value) || 0)
+                  }
                   placeholder="0.00"
                   className="w-full px-4 py-3 bg-white/[0.02] border border-white/[0.08] rounded-xl text-mezo-dark-50 font-mono focus:border-mezo-btc-500/50 focus:outline-none placeholder-mezo-dark-400"
                   step="0.001"
@@ -917,17 +765,16 @@ export default function BorrowerOperationsPanel() {
                   BTC
                 </div>
               </div>
-              {collateralAmount && btcPrice && (
+              {collateralAmount && price && (
                 <div className="text-xs text-mezo-dark-300 mt-1">
                   Max MUSD: $
                   {maxMUSD.toLocaleString(undefined, {
-                    maximumFractionDigits: 0,
+                    maximumFractionDigits: 2,
                   })}{" "}
                   (
-                  {(parseFloat(collateralAmount) * btcPrice).toLocaleString(
-                    undefined,
-                    { maximumFractionDigits: 0 }
-                  )}{" "}
+                  {(collateralAmount * price).toLocaleString(undefined, {
+                    maximumFractionDigits: 2,
+                  })}{" "}
                   collateral value)
                 </div>
               )}
@@ -1019,7 +866,9 @@ export default function BorrowerOperationsPanel() {
                 <input
                   type="number"
                   value={musdAmount}
-                  onChange={(e) => setMusdAmount(e.target.value)}
+                  onChange={(e) =>
+                    setMusdAmount(parseFloat(e.target.value) || 0)
+                  }
                   placeholder="0.00"
                   className="w-full px-4 py-3 bg-white/[0.02] border border-white/[0.08] rounded-xl text-mezo-dark-50 font-mono focus:border-mezo-musd-500/50 focus:outline-none placeholder-mezo-dark-400"
                   step="0.01"

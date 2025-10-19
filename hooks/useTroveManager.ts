@@ -172,8 +172,8 @@ export function useTroveManager() {
    * Get system-wide statistics in one batched call
    * @param price - Current BTC price (as string, will be converted to wei)
    */
-  const getSystemStats = async (price: string) => {
-    const priceInWei = parseEther(price);
+  const getSystemStats = async (price: number) => {
+    const priceInWei = parseEther(price.toString());
 
     try {
       const [tcr, isRecoveryMode, troveCount, l_coll, l_principal, l_interest] =
@@ -204,30 +204,30 @@ export function useTroveManager() {
    * Get pending rewards for a trove
    * @param borrower - Trove owner address (defaults to connected address)
    */
-  const getPendingRewards = async (borrower?: `0x${string}`) => {
-    const troveOwner = borrower || address;
-    if (!troveOwner) throw new Error("No address provided");
+  // const getPendingRewards = async (borrower?: `0x${string}`) => {
+  //   const troveOwner = borrower || address;
+  //   if (!troveOwner) throw new Error("No address provided");
 
-    try {
-      const [pendingColl, pendingDebt, hasPendingRewards] = await Promise.all([
-        contract.read.getPendingCollateral([troveOwner]),
-        contract.read.getPendingDebt([troveOwner]),
-        contract.read.hasPendingRewards([troveOwner]),
-      ]);
+  //   try {
+  //     const [pendingColl, pendingDebt, hasPendingRewards] = await Promise.all([
+  //       contract.read.getPendingCollateral([troveOwner]),
+  //       contract.read.getPendingDebt([troveOwner]),
+  //       contract.read.hasPendingRewards([troveOwner]),
+  //     ]);
 
-      const [pendingPrincipal, pendingInterest] = pendingDebt as bigint[];
+  //     const [pendingPrincipal, pendingInterest] = pendingDebt as bigint[];
 
-      return {
-        pendingCollateral: formatEther(pendingColl as bigint),
-        pendingPrincipal: formatEther(pendingPrincipal),
-        pendingInterest: formatEther(pendingInterest),
-        hasPendingRewards: hasPendingRewards as boolean,
-      };
-    } catch (error) {
-      console.error("Error fetching pending rewards:", error);
-      throw error;
-    }
-  };
+  //     return {
+  //       pendingCollateral: formatEther(pendingColl as bigint),
+  //       pendingPrincipal: formatEther(pendingPrincipal),
+  //       pendingInterest: formatEther(pendingInterest),
+  //       hasPendingRewards: hasPendingRewards as boolean,
+  //     };
+  //   } catch (error) {
+  //     console.error("Error fetching pending rewards:", error);
+  //     throw error;
+  //   }
+  // };
 
   /**
    * Get entire debt and collateral including pending rewards
@@ -271,15 +271,19 @@ export function useTroveManager() {
    * @param borrower - Trove owner address (defaults to connected address)
    * @param price - Current BTC price (as string, will be converted to wei)
    */
-  const getCurrentICR = async (borrower?: `0x${string}`, price?: string) => {
+  const getCurrentICR = async (
+    borrower?: `0x${string}`,
+    price?: number
+  ): Promise<number> => {
     const troveOwner = borrower || address;
     if (!troveOwner) throw new Error("No address provided");
     if (!price) throw new Error("Price is required");
 
     try {
-      const priceInWei = parseEther(price);
+      const priceInWei = parseEther(price.toString());
+      console.log("Getting ICR for:", troveOwner, "at price:", priceInWei);
       const icr = await contract.read.getCurrentICR([troveOwner, priceInWei]);
-      return formatEther(icr as bigint);
+      return Number(icr) / 1e18;
     } catch (error) {
       console.error("Error fetching current ICR:", error);
       throw error;
@@ -290,41 +294,41 @@ export function useTroveManager() {
    * Get nominal ICR (collateral / debt ratio without price)
    * @param borrower - Trove owner address (defaults to connected address)
    */
-  const getNominalICR = async (borrower?: `0x${string}`) => {
-    const troveOwner = borrower || address;
-    if (!troveOwner) throw new Error("No address provided");
+  // const getNominalICR = async (borrower?: `0x${string}`) => {
+  //   const troveOwner = borrower || address;
+  //   if (!troveOwner) throw new Error("No address provided");
 
-    try {
-      const nicr = await contract.read.getNominalICR([troveOwner]);
-      return formatEther(nicr as bigint);
-    } catch (error) {
-      console.error("Error fetching nominal ICR:", error);
-      throw error;
-    }
-  };
+  //   try {
+  //     const nicr = await contract.read.getNominalICR([troveOwner]);
+  //     return formatEther(nicr as bigint);
+  //   } catch (error) {
+  //     console.error("Error fetching nominal ICR:", error);
+  //     throw error;
+  //   }
+  // };
 
   /**
    * Get Total Collateralization Ratio (TCR) for the entire system
    * @param price - Current BTC price (as string, will be converted to wei)
    */
-  const getTCR = async (price: string) => {
-    try {
-      const priceInWei = parseEther(price);
-      const tcr = await contract.read.getTCR([priceInWei]);
-      return formatEther(tcr as bigint);
-    } catch (error) {
-      console.error("Error fetching TCR:", error);
-      throw error;
-    }
-  };
+  // const getTCR = async (price: number) => {
+  //   try {
+  //     const priceInWei = parseEther(price.toString());
+  //     const tcr = await contract.read.getTCR([priceInWei]);
+  //     return Number(tcr as bigint);
+  //   } catch (error) {
+  //     console.error("Error fetching TCR:", error);
+  //     throw error;
+  //   }
+  // };
 
   /**
    * Check if system is in recovery mode
    * @param price - Current BTC price (as string, will be converted to wei)
    */
-  const checkRecoveryMode = async (price: string) => {
+  const checkRecoveryMode = async (price: number) => {
     try {
-      const priceInWei = parseEther(price);
+      const priceInWei = parseEther(price.toString());
       const isRecovery = await contract.read.checkRecoveryMode([priceInWei]);
       return isRecovery as boolean;
     } catch (error) {
@@ -367,17 +371,17 @@ export function useTroveManager() {
    * Get trove owner address by index
    * @param index - Index in the TroveOwners array
    */
-  const getTroveFromTroveOwnersArray = async (index: number) => {
-    try {
-      const owner = await contract.read.getTroveFromTroveOwnersArray([
-        BigInt(index),
-      ]);
-      return owner as `0x${string}`;
-    } catch (error) {
-      console.error("Error fetching trove from array:", error);
-      throw error;
-    }
-  };
+  // const getTroveFromTroveOwnersArray = async (index: number) => {
+  //   try {
+  //     const owner = await contract.read.getTroveFromTroveOwnersArray([
+  //       BigInt(index),
+  //     ]);
+  //     return owner as `0x${string}`;
+  //   } catch (error) {
+  //     console.error("Error fetching trove from array:", error);
+  //     throw error;
+  //   }
+  // };
 
   return {
     // Contract instances
@@ -388,17 +392,17 @@ export function useTroveManager() {
     getCompleteTroveData,
     getTroveHealthMetrics,
     getSystemStats,
-    getPendingRewards,
+    // getPendingRewards,
     getEntireDebtAndColl,
 
     // Individual read functions
     getCurrentICR,
-    getNominalICR,
-    getTCR,
+    // getNominalICR,
+    // getTCR,
     checkRecoveryMode,
     getTroveStatus,
     getTroveOwnersCount,
-    getTroveFromTroveOwnersArray,
+    // getTroveFromTroveOwnersArray,
 
     // Utilities
     address,

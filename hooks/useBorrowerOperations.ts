@@ -116,7 +116,7 @@ export function useBorrowerOperations() {
    * @param lowerHint - Address hint for sorted troves
    */
   const addCollateral = async (
-    collateralAmount: string,
+    collateralAmount: number,
     upperHint: `0x${string}` = "0x0000000000000000000000000000000000000000",
     lowerHint: `0x${string}` = "0x0000000000000000000000000000000000000000"
   ) => {
@@ -124,7 +124,7 @@ export function useBorrowerOperations() {
 
     try {
       // parseEther converts from human-readable (e.g., "1.5") to wei (1.5 * 10^18)
-      const valueInWei = parseEther(collateralAmount);
+      const valueInWei = parseEther(collateralAmount.toString());
 
       const hash = await walletClient.writeContract({
         address: CONTRACT_ADDRESS as `0x${string}`,
@@ -150,7 +150,7 @@ export function useBorrowerOperations() {
    * @param lowerHint - Address hint for sorted troves
    */
   const withdrawCollateral = async (
-    amount: string,
+    amount: number,
     upperHint: `0x${string}` = "0x0000000000000000000000000000000000000000",
     lowerHint: `0x${string}` = "0x0000000000000000000000000000000000000000"
   ) => {
@@ -161,7 +161,7 @@ export function useBorrowerOperations() {
         address: CONTRACT_ADDRESS as `0x${string}`,
         abi: BorrowerOperationsAbi.abi,
         functionName: "withdrawColl",
-        args: [parseEther(amount), upperHint, lowerHint],
+        args: [parseEther(amount.toString()), upperHint, lowerHint],
         chain: MEZO_TESTNET,
         account: address,
       });
@@ -180,7 +180,7 @@ export function useBorrowerOperations() {
    * @param lowerHint - Address hint for sorted troves
    */
   const withdrawMUSD = async (
-    amount: string,
+    amount: number,
     upperHint: `0x${string}` = "0x0000000000000000000000000000000000000000",
     lowerHint: `0x${string}` = "0x0000000000000000000000000000000000000000"
   ) => {
@@ -191,7 +191,7 @@ export function useBorrowerOperations() {
         address: CONTRACT_ADDRESS as `0x${string}`,
         abi: BorrowerOperationsAbi.abi,
         functionName: "withdrawMUSD",
-        args: [parseEther(amount), upperHint, lowerHint],
+        args: [parseEther(amount.toString()), upperHint, lowerHint],
         chain: MEZO_TESTNET,
         account: address,
       });
@@ -210,7 +210,7 @@ export function useBorrowerOperations() {
    * @param lowerHint - Address hint for sorted troves
    */
   const repayMUSD = async (
-    amount: string,
+    amount: number,
     upperHint: `0x${string}` = "0x0000000000000000000000000000000000000000",
     lowerHint: `0x${string}` = "0x0000000000000000000000000000000000000000"
   ) => {
@@ -221,7 +221,7 @@ export function useBorrowerOperations() {
         address: CONTRACT_ADDRESS as `0x${string}`,
         abi: BorrowerOperationsAbi.abi,
         functionName: "repayMUSD",
-        args: [parseEther(amount), upperHint, lowerHint],
+        args: [parseEther(amount.toString()), upperHint, lowerHint],
         chain: MEZO_TESTNET,
         account: address,
       });
@@ -263,8 +263,8 @@ export function useBorrowerOperations() {
    * @param lowerHint - Address hint for sorted troves insertion
    */
   const openTrove = async (
-    debtAmount: string,
-    collateralAmount: string,
+    debtAmount: number,
+    collateralAmount: number,
     upperHint: `0x${string}` = "0x0000000000000000000000000000000000000000",
     lowerHint: `0x${string}` = "0x0000000000000000000000000000000000000000"
   ) => {
@@ -276,8 +276,8 @@ export function useBorrowerOperations() {
         address: CONTRACT_ADDRESS as `0x${string}`,
         abi: BorrowerOperationsAbi.abi,
         functionName: "openTrove",
-        args: [parseEther(debtAmount), upperHint, lowerHint],
-        value: parseEther(collateralAmount),
+        args: [parseEther(debtAmount.toString()), upperHint, lowerHint],
+        value: parseEther(collateralAmount.toString()),
         chain: MEZO_TESTNET,
       });
 

@@ -36,7 +36,7 @@ export function useBTCPrice() {
         }
 
         // Start streaming updates
-        eventSource = await connection.getStreamingPriceUpdates([
+        eventSource = await connection.getPriceUpdatesStream([
           BTC_PRICE_FEED_ID,
         ]);
 
