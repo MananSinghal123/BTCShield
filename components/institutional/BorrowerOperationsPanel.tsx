@@ -106,7 +106,7 @@ export default function BorrowerOperationsPanel() {
 
   // Correctly trigger the effect when fetchTroveData is recreated
   useEffect(() => {
-    setTroveLoading(true);
+    // setTroveLoading(true);
     fetchTroveData();
   }, [btcPrice]);
 
