@@ -46,7 +46,9 @@ const OptionCard = ({
   const now = Math.floor(Date.now() / 1000);
   const hasMatured = now >= option.maturityTime;
 
-  const canDefault = now >= option.maturityTime + 86400;
+  const canDefault =
+    now >= option.maturityTime + 86400 &&
+    option.phase !== OptionPhase.Defaulted;
 
   return (
     <motion.div

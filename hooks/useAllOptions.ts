@@ -100,11 +100,19 @@ export function useAllOptions() {
 
     console.log("Fetched OptionInitialized events:", allEvents);
 
+    const uniqueBorrowers = Array.from(
+      new Set(allEvents.map((event) => event.args.borrower))
+    );
+
     // const price = await priceFeed.read.fetchPrice();
     const availableOptions = [];
 
-    for (const event of allEvents) {
-      const borrower = event.args.borrower;
+    for (const borrower of uniqueBorrowers) {
+      // const borrower = event.args.borrower;
+      // const option = (await contract.read.getOption([
+      //   borrower,
+      // ])) as BackstopOption;
+
       const option = (await contract.read.getOption([
         borrower,
       ])) as BackstopOption;
