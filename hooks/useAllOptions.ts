@@ -60,8 +60,8 @@ export function useAllOptions() {
   // Fetch available options for supporters
   async function fetchAvailableOptions() {
     const currentBlock = await client.getBlockNumber();
-    const fromBlock = 8067900n; // Last ~2 days
-    const maxBlockRange = 10000n; // RPC limit
+    const fromBlock = BigInt(8067900); // Last ~2 days
+    const maxBlockRange = BigInt(10000); // RPC limit
 
     // Chunk the block range into batches
     const allEvents = [];
@@ -69,9 +69,9 @@ export function useAllOptions() {
 
     while (currentFromBlock <= currentBlock) {
       const currentToBlock =
-        currentFromBlock + maxBlockRange - 1n > currentBlock
+        currentFromBlock + maxBlockRange - BigInt(1) > currentBlock
           ? currentBlock
-          : currentFromBlock + maxBlockRange - 1n;
+          : currentFromBlock + maxBlockRange - BigInt(1);
 
       console.log(
         `Fetching events from block ${currentFromBlock} to ${currentToBlock}`
@@ -95,7 +95,7 @@ export function useAllOptions() {
       });
 
       allEvents.push(...events);
-      currentFromBlock = currentToBlock + 1n;
+      currentFromBlock = currentToBlock + BigInt(1);
     }
 
     console.log("Fetched OptionInitialized events:", allEvents);

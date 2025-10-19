@@ -184,62 +184,62 @@ export default function BackstopOptionManager({
   }, [userOptions, getTerminationFee]);
 
   // Handle action (terminate, exercise, default)
-  const handleAction = async (
-    action: string,
-    borrower: string,
-    terminationFee?: string
-  ) => {
-    if (!isConnected) {
-      alert("Please connect your wallet");
-      return;
-    }
+  // const handleAction = async (
+  //   action: string,
+  //   borrower: string,
+  //   terminationFee?: string
+  // ) => {
+  //   if (!isConnected) {
+  //     alert("Please connect your wallet");
+  //     return;
+  //   }
 
-    const confirmed = confirm(
-      `Are you sure you want to ${action} this option?${
-        action === "terminate" && terminationFee
-          ? `\n\nTermination fee: $${terminationFee}`
-          : ""
-      }`
-    );
+  //   const confirmed = confirm(
+  //     `Are you sure you want to ${action} this option?${
+  //       action === "terminate" && terminationFee
+  //         ? `\n\nTermination fee: $${terminationFee}`
+  //         : ""
+  //     }`
+  //   );
 
-    if (!confirmed) return;
+  //   if (!confirmed) return;
 
-    setActionLoading(true);
-    try {
-      let hash: `0x${string}`;
+  //   setActionLoading(true);
+  //   try {
+  //     let hash: `0x${string}`;
 
-      switch (action) {
-        case "terminate":
-          if (!terminationFee) throw new Error("Termination fee not provided");
-          hash = await terminateEarly(terminationFee);
-          break;
+  //     switch (action) {
+  //       case "terminate":
+  //         if (!terminationFee) throw new Error("Termination fee not provided");
+  //         hash = await terminateEarly(terminationFee);
+  //         break;
 
-        case "exercise":
-          hash = await exercise(borrower as `0x${string}`);
-          break;
+  //       case "exercise":
+  //         hash = await exercise(borrower as `0x${string}`);
+  //         break;
 
-        case "default":
-          hash = await defaultOption(borrower as `0x${string}`);
-          break;
+  //       case "default":
+  //         hash = await defaultOption(borrower as `0x${string}`);
+  //         break;
 
-        default:
-          throw new Error("Unknown action");
-      }
+  //       default:
+  //         throw new Error("Unknown action");
+  //     }
 
-      // Wait for transaction confirmation
-      await waitForTransaction(hash);
+  //     // Wait for transaction confirmation
+  //     await waitForTransaction(hash);
 
-      alert(`✅ Successfully ${action}ed option!`);
+  //     alert(`✅ Successfully ${action}ed option!`);
 
-      // Reload data after successful action
-      setTimeout(loadData, 2000);
-    } catch (error: any) {
-      console.error(`Error ${action}ing option:`, error);
-      alert(`❌ Failed to ${action} option:\n${extractErrorMessage(error)}`);
-    } finally {
-      setActionLoading(false);
-    }
-  };
+  //     // Reload data after successful action
+  //     setTimeout(loadData, 2000);
+  //   } catch (error: any) {
+  //     console.error(`Error ${action}ing option:`, error);
+  //     alert(`❌ Failed to ${action} option:\n${extractErrorMessage(error)}`);
+  //   } finally {
+  //     setActionLoading(false);
+  //   }
+  // };
 
   // Handle create option
   const handleCreateOption = async () => {
