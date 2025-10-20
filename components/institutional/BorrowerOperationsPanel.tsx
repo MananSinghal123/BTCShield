@@ -71,12 +71,13 @@ export default function BorrowerOperationsPanel() {
 
   const fetchTroveData = useCallback(async () => {
     // This guard clause is important! It prevents fetching when price is invalid.
-    if (!isConnected || !price || price <= 0) {
+    if (
+      !isConnected
+      // || !price || price <= 0
+    ) {
       setTroveData(null);
-      setSystemStats(null);
-      setCurrentICR(0);
-      // It's often better to not set loading to false here,
-      // to avoid a screen flicker if price is just initializing.
+      // setSystemStats(null);
+      // setCurrentICR(0);
       return;
     }
 
@@ -84,16 +85,16 @@ export default function BorrowerOperationsPanel() {
     setTroveError(null);
 
     try {
-      console.log("Fetching trove data with BTC Price:", btcPrice);
+      // console.log("Fetching trove data with BTC Price:", btcPrice);
       const troveInfo = await getCompleteTroveData();
       // Pass the stable price value into your functions
-      const icr = await getCurrentICR(undefined, btcPrice || 0);
-      const systemInfo = await getSystemStats(btcPrice || 0);
+      // const icr = await getCurrentICR(undefined, btcPrice || 0);
+      // const systemInfo = await getSystemStats(btcPrice || 0);
 
       setTroveData(troveInfo);
-      setSystemStats(systemInfo);
-      setCurrentICR(icr);
-      console.log("Fetched trove data:", troveInfo, systemInfo, icr);
+      // setSystemStats(systemInfo);
+      // setCurrentICR(icr);
+      // console.log("Fetched trove data:", troveInfo, systemInfo, icr);
     } catch (error) {
       console.error("Error fetching trove data:", error);
       setTroveError(
@@ -102,13 +103,44 @@ export default function BorrowerOperationsPanel() {
     } finally {
       setTroveLoading(false);
     }
-  }, [isConnected, btcPrice]); // Keep dependencies here
+  }, [isConnected]); // Keep dependencies here
 
-  // Correctly trigger the effect when fetchTroveData is recreated
   useEffect(() => {
-    // setTroveLoading(true);
     fetchTroveData();
-  }, [btcPrice]);
+  }, [isConnected]);
+
+  const fetchICRData = async () => {
+    if (!isConnected || !btcPrice || btcPrice <= 0) {
+      setCurrentICR(0);
+      return;
+    }
+
+    try {
+      const icr = await getCurrentICR(undefined, btcPrice || 0);
+      setCurrentICR(icr);
+    } catch (error) {
+      console.error("Error fetching ICR data:", error);
+    }
+  };
+
+  const fetchSystemStats = async () => {
+    if (!isConnected || !btcPrice || btcPrice <= 0) {
+      setSystemStats(null);
+      return;
+    }
+
+    try {
+      const stats = await getSystemStats(btcPrice || 0);
+      setSystemStats(stats);
+    } catch (error) {
+      console.error("Error fetching system stats:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchICRData();
+    fetchSystemStats();
+  }, [btcPrice, isConnected]);
 
   useEffect(() => {
     const fetchMinNetDebt = async () => {
@@ -116,13 +148,10 @@ export default function BorrowerOperationsPanel() {
         const minDebt = await getMinNetDebt();
         setMinNetDebt(Number(minDebt));
       } catch (err) {
-        // Fallback to a default value if fetch fails
-        setMinNetDebt(2000);
+        setMinNetDebt(1800);
       }
     };
     fetchMinNetDebt();
-    // Only run once on mount, or add getMinNetDebt to deps if it can change
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const setOperationLoading = (
@@ -346,12 +375,6 @@ export default function BorrowerOperationsPanel() {
     return collateralValue / MCR;
   }, [openTroveCollateral, price]);
 
-  // Truncate address for display
-  // const truncateAddress = (addr: string) => {
-  //   if (!addr) return "";
-  //   return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
-  // };
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -455,7 +478,7 @@ export default function BorrowerOperationsPanel() {
                       ? currentICR.toFixed(4)
                       : currentICR && Number(currentICR) >= 1e6
                       ? "N/A"
-                      : "-"}
+                      : "...."}
                   </span>
                 </div>
 

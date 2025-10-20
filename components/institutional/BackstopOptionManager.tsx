@@ -303,7 +303,7 @@ export default function BackstopOptionManager({
       className="max-w-6xl mx-auto space-y-6"
     >
       {/* Header */}
-      <div className="institutional-card">
+      {/* <div className="institutional-card">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
             <div className="p-2 rounded-xl bg-purple-500/10">
@@ -336,7 +336,7 @@ export default function BackstopOptionManager({
             </motion.button>
           </div>
         </div>
-      </div>
+      </div> */}
       {/* Create Option Section */}
       <div className="institutional-card">
         <div className="flex items-center justify-between mb-4">
@@ -521,6 +521,7 @@ export default function BackstopOptionManager({
         </AnimatePresence>
       </div>
       {/* User Option Display */}{" "}
+      <h1 className="text-2xl font-bold text-mezo-dark-50 mb-4">My Options</h1>
       {option ? (
         <OptionCard
           option={option}
