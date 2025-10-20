@@ -147,10 +147,10 @@ const OptionsList = () => {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-4xl font-bold text-mezo-dark-50 mb-2">
-                Backstop Options Market
+                Options Market
               </h1>
               <p className="text-mezo-dark-300">
-                Browse and manage all available options
+                Browse and support lending positions in the marketplace
               </p>
             </div>
             <motion.button

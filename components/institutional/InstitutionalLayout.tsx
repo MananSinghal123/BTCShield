@@ -39,13 +39,13 @@ export default function InstitutionalLayout({
       icon: BarChart3,
     },
     {
-      href: "/options",
-      label: "My Options",
+      href: "/protection",
+      label: "My Protection",
       icon: Shield,
     },
     {
-      href: "/options/explore",
-      label: "Explore",
+      href: "/protection/explore",
+      label: "Marketplace",
       icon: Users,
     },
     {
@@ -58,15 +58,15 @@ export default function InstitutionalLayout({
   const getPageDescription = (path: string): string => {
     switch (path) {
       case "/dashboard":
-        return "Monitor your BTC collateral and portfolio analytics";
-      case "/options":
-        return "Create and manage reversible call options for borrower protection";
-      case "/options/explore":
-        return "Explore and support undercollateralized positions";
+        return "Overview of your lending positions and portfolio performance";
+      case "/protection":
+        return "Create protection options for your lending positions";
+      case "/protection/explore":
+        return "Browse and support lending positions in the marketplace";
       case "/settings":
         return "Configure your BTCShield preferences";
       default:
-        return "BTC Backstop Protection Platform";
+        return "BTC Protection Platform";
     }
   };
 
@@ -112,7 +112,7 @@ export default function InstitutionalLayout({
                   BTCShield
                 </h1>
                 <p className="text-xs text-mezo-dark-300">
-                  BTC Backstop Protection Platform
+                  Liquidation Protection Platform
                 </p>
               </div>
             </div>
@@ -154,7 +154,7 @@ export default function InstitutionalLayout({
         <main className="flex-1 p-6">
           <div className="max-w-7xl mx-auto">
             {/* Page Header */}
-            <motion.div
+            {/* <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="mb-8"
@@ -172,7 +172,7 @@ export default function InstitutionalLayout({
                   <span>Live data</span>
                 </div>
               </div>
-            </motion.div>
+            </motion.div> */}
 
             {/* Content */}
             <div>{children}</div>

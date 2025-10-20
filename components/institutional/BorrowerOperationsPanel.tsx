@@ -11,6 +11,7 @@ import {
   Shield,
   BarChart3,
   XCircle,
+  PieChart,
 } from "lucide-react";
 import { useBorrowerOperations } from "@/hooks/useBorrowerOperations";
 import { useBTCPrice } from "@/hooks/useBtcPrice";
@@ -51,10 +52,12 @@ export default function BorrowerOperationsPanel() {
   const [currentICR, setCurrentICR] = useState<number>(0);
 
   // State for form inputs
-  const [collateralAmount, setCollateralAmount] = useState<number>(0);
-  const [musdAmount, setMusdAmount] = useState<number>(0);
-  const [openTroveDebt, setOpenTroveDebt] = useState<number>(0);
-  const [openTroveCollateral, setOpenTroveCollateral] = useState<number>(0);
+  const [collateralAmount, setCollateralAmount] = useState<number | null>(null);
+  const [musdAmount, setMusdAmount] = useState<number | null>(null);
+  const [openTroveDebt, setOpenTroveDebt] = useState<number | null>(null);
+  const [openTroveCollateral, setOpenTroveCollateral] = useState<number | null>(
+    null
+  );
 
   // Loading states for each operation
   const [loadingStates, setLoadingStates] = useState({
@@ -420,9 +423,7 @@ export default function BorrowerOperationsPanel() {
               </div>
             </div>
             <div className="text-center">
-              <div className="text-xs text-mezo-dark-300 mb-1">
-                Total Troves
-              </div>
+              <div className="text-xs text-mezo-dark-300 mb-1">Total Loans</div>
               <div className="font-mono font-semibold text-mezo-dark-50">
                 {systemStats.troveCount}
               </div>
@@ -440,9 +441,9 @@ export default function BorrowerOperationsPanel() {
           {/* Trove Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Shield className="w-6 h-6 text-blue-400" />
+              <PieChart className="w-6 h-6 text-blue-400" />
               <h2 className="text-2xl font-bold text-mezo-dark-50">
-                Your Trove
+                My Position
               </h2>
             </div>
             {troveData?.isActive && (
@@ -490,7 +491,7 @@ export default function BorrowerOperationsPanel() {
                     <AlertCircle className="w-5 h-5 text-red-400" />
                     <p className="text-sm text-red-300">
                       Warning: Your position is approaching liquidation
-                      threshold. Consider adding collateral.
+                      threshold. Consider asking support.
                     </p>
                   </div>
                 </div>
@@ -510,7 +511,7 @@ export default function BorrowerOperationsPanel() {
               {/* Collateral Health */}
               <div className="bg-mezo-dark-800/30 rounded-xl p-6 border border-white/10">
                 <h3 className="text-sm font-semibold text-mezo-dark-50 mb-4 flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-blue-400" />
+                  {/* <Shield className="w-4 h-4 text-blue-400" /> */}
                   Collateral Health
                 </h3>
 
@@ -586,7 +587,9 @@ export default function BorrowerOperationsPanel() {
               </div>
 
               <div className="flex items-center justify-between pt-4 border-t border-white/10">
-                <span className="text-sm text-mezo-dark-300">Current ICR</span>
+                <span className="text-sm text-mezo-dark-300">
+                  Collateral Ratio
+                </span>
                 <span className="text-lg font-mono font-bold text-mezo-dark-50">
                   {currentICR &&
                   isFinite(Number(currentICR)) &&
@@ -639,7 +642,7 @@ export default function BorrowerOperationsPanel() {
             <div className="flex items-center gap-3 mb-4">
               <Layers className="w-5 h-5 text-purple-400" />
               <h3 className="text-lg font-semibold text-mezo-dark-50">
-                Trove Management
+                Loan Management
               </h3>
             </div>
 
@@ -656,11 +659,12 @@ export default function BorrowerOperationsPanel() {
             </div>
 
             <div className="space-y-3">
+              {/* <label htmlFor="open-trove-collateral">Collateral (BTC)</label> */}
               <input
                 type="number"
                 value={openTroveCollateral}
                 onChange={(e) =>
-                  setOpenTroveCollateral(parseFloat(e.target.value) || 0)
+                  setOpenTroveCollateral(parseFloat(e.target.value))
                 }
                 placeholder="Collateral (BTC)"
                 className="w-full px-4 py-3 bg-white/[0.02] border border-white/[0.08] rounded-xl text-mezo-dark-50 font-mono focus:border-purple-500/50 focus:outline-none placeholder-mezo-dark-400"
@@ -679,9 +683,7 @@ export default function BorrowerOperationsPanel() {
               <input
                 type="number"
                 value={openTroveDebt}
-                onChange={(e) =>
-                  setOpenTroveDebt(parseFloat(e.target.value) || 0)
-                }
+                onChange={(e) => setOpenTroveDebt(parseFloat(e.target.value))}
                 placeholder="Debt (MUSD)"
                 className="w-full px-4 py-3 bg-white/[0.02] border border-white/[0.08] rounded-xl text-mezo-dark-50 font-mono focus:border-purple-500/50 focus:outline-none placeholder-mezo-dark-400"
                 disabled={!isConnected || isAnyLoading}
@@ -715,7 +717,7 @@ export default function BorrowerOperationsPanel() {
                 }
                 className="w-full py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-all"
               >
-                {loadingStates.openTrove ? "Confirming..." : "Open Trove"}
+                {loadingStates.openTrove ? "Confirming..." : "Create Position"}
               </button>
 
               <button
@@ -723,7 +725,7 @@ export default function BorrowerOperationsPanel() {
                 disabled={!isConnected || isAnyLoading}
                 className="w-full py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-all"
               >
-                {loadingStates.closeTrove ? "Confirming..." : "Close Trove"}
+                {loadingStates.closeTrove ? "Confirming..." : "Close Position"}
               </button>
             </div>
           </div>

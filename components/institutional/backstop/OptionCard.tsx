@@ -63,7 +63,7 @@ const OptionCard = ({
           </div>
           <div>
             <h3 className="text-lg font-semibold text-mezo-dark-50">
-              Backstop Option
+              Protection Option
             </h3>
             <p className="text-sm text-mezo-dark-300">
               Role:{" "}

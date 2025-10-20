@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useRcoManager, SupporterStats } from "@/hooks/useRcoManager";
 import OptionCard from "./backstop/OptionCard";
+import { useTroveManager } from "@/hooks/useTroveManager";
 
 interface BackstopOptionManagerProps {
   borrowerAddress?: string;
@@ -66,6 +67,39 @@ export default function BackstopOptionManager({
   });
 
   const [createLoading, setCreateLoading] = useState(false);
+  const [troveData, setTroveData] = useState<any>(null);
+  const [troveLoading, setTroveLoading] = useState<boolean>(false);
+  const [troveError, setTroveError] = useState<string | null>(null);
+  const { getCompleteTroveData } = useTroveManager();
+
+  const fetchTroveData = useCallback(async () => {
+    // This guard clause is important! It prevents fetching when price is invalid.
+    if (!isConnected) {
+      setTroveData(null);
+
+      return;
+    }
+
+    setTroveLoading(true);
+    setTroveError(null);
+
+    try {
+      const troveInfo = await getCompleteTroveData();
+
+      setTroveData(troveInfo);
+    } catch (error) {
+      console.error("Error fetching trove data:", error);
+      setTroveError(
+        error instanceof Error ? error.message : "Failed to fetch trove data"
+      );
+    } finally {
+      setTroveLoading(false);
+    }
+  }, [isConnected]); // Keep dependencies here
+
+  useEffect(() => {
+    fetchTroveData();
+  }, [isConnected]);
 
   // Helper function to wait for transaction confirmation
   const waitForTransaction = async (hash: `0x${string}`) => {
@@ -166,8 +200,9 @@ export default function BackstopOptionManager({
     setCreateForm((prev) => ({
       ...prev,
       borrowerAddress: address || "",
+      collateralValue: troveData?.totalCollateral,
     }));
-  }, [address]);
+  }, [address, troveData]);
 
   // Fetch termination fees for each option
   useEffect(() => {
@@ -182,64 +217,6 @@ export default function BackstopOptionManager({
 
     fetchTerminationFees();
   }, [userOptions, getTerminationFee]);
-
-  // Handle action (terminate, exercise, default)
-  // const handleAction = async (
-  //   action: string,
-  //   borrower: string,
-  //   terminationFee?: string
-  // ) => {
-  //   if (!isConnected) {
-  //     alert("Please connect your wallet");
-  //     return;
-  //   }
-
-  //   const confirmed = confirm(
-  //     `Are you sure you want to ${action} this option?${
-  //       action === "terminate" && terminationFee
-  //         ? `\n\nTermination fee: $${terminationFee}`
-  //         : ""
-  //     }`
-  //   );
-
-  //   if (!confirmed) return;
-
-  //   setActionLoading(true);
-  //   try {
-  //     let hash: `0x${string}`;
-
-  //     switch (action) {
-  //       case "terminate":
-  //         if (!terminationFee) throw new Error("Termination fee not provided");
-  //         hash = await terminateEarly(terminationFee);
-  //         break;
-
-  //       case "exercise":
-  //         hash = await exercise(borrower as `0x${string}`);
-  //         break;
-
-  //       case "default":
-  //         hash = await defaultOption(borrower as `0x${string}`);
-  //         break;
-
-  //       default:
-  //         throw new Error("Unknown action");
-  //     }
-
-  //     // Wait for transaction confirmation
-  //     await waitForTransaction(hash);
-
-  //     alert(`✅ Successfully ${action}ed option!`);
-
-  //     // Reload data after successful action
-  //     setTimeout(loadData, 2000);
-  //   } catch (error: any) {
-  //     console.error(`Error ${action}ing option:`, error);
-  //     alert(`❌ Failed to ${action} option:\n${extractErrorMessage(error)}`);
-  //   } finally {
-  //     setActionLoading(false);
-  //   }
-  // };
 
   // Handle create option
   const handleCreateOption = async () => {
@@ -302,41 +279,6 @@ export default function BackstopOptionManager({
       transition={{ duration: 0.5 }}
       className="max-w-6xl mx-auto space-y-6"
     >
-      {/* Header */}
-      {/* <div className="institutional-card">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 rounded-xl bg-purple-500/10">
-              <Shield className="w-6 h-6 text-purple-400" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-semibold text-mezo-dark-50 font-display">
-                Backstop Option Manager
-              </h2>
-              <p className="text-sm text-mezo-dark-300">
-                Create and manage reversible call options for borrower
-                protection
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-3">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={loadData}
-              disabled={loading}
-              className="p-2 rounded-lg hover:bg-white/5 transition-colors"
-            >
-              <RefreshCw
-                className={`w-5 h-5 text-mezo-dark-300 ${
-                  loading ? "animate-spin" : ""
-                }`}
-              />
-            </motion.button>
-          </div>
-        </div>
-      </div> */}
       {/* Create Option Section */}
       <div className="institutional-card">
         <div className="flex items-center justify-between mb-4">
@@ -345,7 +287,7 @@ export default function BackstopOptionManager({
               <Plus className="w-5 h-5 text-green-400" />
             </div>
             <h3 className="text-xl font-semibold text-mezo-dark-50">
-              Create New Option
+              Create Protection Option
             </h3>
           </div>
 
@@ -397,16 +339,17 @@ export default function BackstopOptionManager({
                     <input
                       type="number"
                       value={createForm.collateralValue}
-                      onChange={(e) =>
-                        setCreateForm((prev) => ({
-                          ...prev,
-                          collateralValue: parseFloat(e.target.value) || 0,
-                        }))
-                      }
-                      placeholder="10000"
-                      className="w-full px-4 py-3 bg-white/[0.02] border border-white/[0.08] rounded-xl text-mezo-dark-50 font-mono focus:border-purple-500/50 focus:outline-none placeholder-mezo-dark-400"
-                      step="0.01"
-                      min="0"
+                      readOnly
+                      // onChange={(e) =>
+                      //   setCreateForm((prev) => ({
+                      //     ...prev,
+                      //     collateralValue: parseFloat(e.target.value) || 0,
+                      //   }))
+                      // }
+                      placeholder="..."
+                      className="w-full px-4 py-3 bg-white/[0.02] border border-white/[0.08] rounded-xl text-mezo-dark-50 font-mono focus:border-purple-500/50 focus:outline-none placeholder-mezo-dark-400 opacity-70 cursor-not-allowed"
+                      // step="0.01"
+                      // min="0"
                     />
                   </div>
 
@@ -521,8 +464,8 @@ export default function BackstopOptionManager({
         </AnimatePresence>
       </div>
       {/* User Option Display */}{" "}
-      <h1 className="text-2xl font-bold text-mezo-dark-50 mb-4">My Options</h1>
-      {option ? (
+      {/* <h1 className="text-2xl font-bold text-mezo-dark-50 mb-4">My Options</h1> */}
+      {/* {option ? (
         <OptionCard
           option={option}
           userRole="borrower"
@@ -538,10 +481,41 @@ export default function BackstopOptionManager({
             No Active Option Found
           </h2>
           <p className="text-mezo-dark-300">
-            You currently have no active backstop options as a borrower.
+            You currently have no active protection options as a borrower.
           </p>
         </div>
-      )}
+      )} */}
+      <div className="institutional-card">
+        <div className="flex items-center space-x-3 mb-6">
+          <div className="p-2 rounded-xl bg-blue-500/10">
+            <Shield className="w-5 h-5 text-blue-400" />
+          </div>
+          <h1 className="text-2xl font-bold text-mezo-dark-50">
+            My Protection Options
+          </h1>
+        </div>
+
+        {option ? (
+          <OptionCard
+            option={option}
+            userRole="borrower"
+            terminationFee={terminationFees}
+            onTerminateEarly={(terminationFee) =>
+              terminateEarly(terminationFee || 0)
+            }
+          />
+        ) : (
+          <div className="text-center py-12">
+            <XCircle className="w-16 h-16 text-mezo-dark-400 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-mezo-dark-50 mb-2">
+              No Active Protection Found
+            </h2>
+            <p className="text-mezo-dark-300">
+              You currently have no active protection options as a borrower.
+            </p>
+          </div>
+        )}
+      </div>
     </motion.div>
   );
 }
