@@ -1,7 +1,15 @@
 import motion from "framer-motion";
 
+interface CollateralGaugeProps {
+  ratio: number;
+  liquidationThreshold?: number;
+}
+
 // Collateral Gauge Component
-export const CollateralGauge = ({ ratio, liquidationThreshold = 1.1 }) => {
+export const CollateralGauge = ({
+  ratio,
+  liquidationThreshold = 1.1,
+}: CollateralGaugeProps) => {
   const normalizedRatio = ratio || 0;
   const percentage = Math.min((normalizedRatio / 3) * 100, 100);
 

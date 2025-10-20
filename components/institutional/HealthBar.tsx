@@ -1,6 +1,14 @@
 import { motion } from "framer-motion";
 
-export const HealthBar = ({ ratio, liquidationThreshold = 1.1 }) => {
+interface HealthBarProps {
+  ratio: number;
+  liquidationThreshold?: number;
+}
+
+export const HealthBar = ({
+  ratio,
+  liquidationThreshold = 1.1,
+}: HealthBarProps) => {
   const normalizedRatio = ratio || 0;
   const percentage = Math.min((normalizedRatio / 3) * 100, 100);
 
