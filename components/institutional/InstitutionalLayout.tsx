@@ -8,10 +8,12 @@ import {
   Shield,
   Users,
   Settings,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { useState, useEffect, useTransition } from "react";
 
 interface InstitutionalLayoutProps {
   children?: React.ReactNode;
@@ -21,6 +23,14 @@ export default function InstitutionalLayout({
   children,
 }: InstitutionalLayoutProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [isNavigating, setIsNavigating] = useState(false);
+
+  // Listen for navigation state
+  useEffect(() => {
+    setIsNavigating(isPending);
+  }, [isPending]);
 
   const navigationItems = [
     {
@@ -28,11 +38,6 @@ export default function InstitutionalLayout({
       label: "Dashboard",
       icon: BarChart3,
     },
-    // {
-    //   href: "/borrow",
-    //   label: "Borrow & Lend",
-    //   icon: ArrowUpDown,
-    // },
     {
       href: "/options",
       label: "My Options",
@@ -54,8 +59,6 @@ export default function InstitutionalLayout({
     switch (path) {
       case "/dashboard":
         return "Monitor your BTC collateral and portfolio analytics";
-      // case "/borrow":
-      //   return "Borrow MUSD against BTC collateral with real-time oracle feeds";
       case "/options":
         return "Create and manage reversible call options for borrower protection";
       case "/options/explore":
@@ -71,8 +74,30 @@ export default function InstitutionalLayout({
   const pageTitle = currentPage?.label || "BTCShield";
   const pageDescription = getPageDescription(pathname);
 
+  const handleNavigation = (href: string) => {
+    if (href === pathname) return; // Don't navigate if already on page
+
+    setIsNavigating(true);
+    startTransition(() => {
+      router.push(href);
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-mezo-dark-950 via-mezo-dark-900 to-mezo-dark-800">
+      {/* Page Transition Loader - Blocking Overlay */}
+      {isNavigating && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-mezo-dark-950/95 backdrop-blur-md pointer-events-auto"
+          style={{ cursor: "wait" }}
+        >
+          <div className="flex flex-col items-center space-y-4">
+            <Loader2 className="w-12 h-12 text-mezo-btc-500 animate-spin" />
+            <p className="text-mezo-dark-200 font-medium">Loading...</p>
+          </div>
+        </div>
+      )}
+
       {/* Top Navigation */}
       <nav className="sticky top-0 z-40 institutional-card border-b border-white/[0.08]">
         <div className="flex items-center justify-between px-6 py-4">
@@ -99,20 +124,20 @@ export default function InstitutionalLayout({
               const Icon = item.icon;
               const isActive = pathname === item.href;
               return (
-                <Link key={item.href} href={item.href}>
-                  <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all cursor-pointer ${
-                      isActive
-                        ? "bg-mezo-btc-500/10 text-mezo-btc-500 border border-mezo-btc-500/20"
-                        : "text-mezo-dark-300 hover:text-mezo-dark-50 hover:bg-white/[0.04]"
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span className="text-sm font-medium">{item.label}</span>
-                  </motion.div>
-                </Link>
+                <motion.div
+                  key={item.href}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => handleNavigation(item.href)}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all cursor-pointer ${
+                    isActive
+                      ? "bg-mezo-btc-500/10 text-mezo-btc-500 border border-mezo-btc-500/20"
+                      : "text-mezo-dark-300 hover:text-mezo-dark-50 hover:bg-white/[0.04]"
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span className="text-sm font-medium">{item.label}</span>
+                </motion.div>
               );
             })}
           </div>
@@ -150,13 +175,7 @@ export default function InstitutionalLayout({
             </motion.div>
 
             {/* Content */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              {children}
-            </motion.div>
+            <div>{children}</div>
           </div>
         </main>
       </div>
