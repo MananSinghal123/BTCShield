@@ -662,7 +662,7 @@ export default function BorrowerOperationsPanel() {
               {/* <label htmlFor="open-trove-collateral">Collateral (BTC)</label> */}
               <input
                 type="number"
-                value={openTroveCollateral}
+                value={openTroveCollateral ?? ""}
                 onChange={(e) =>
                   setOpenTroveCollateral(parseFloat(e.target.value))
                 }
@@ -682,7 +682,7 @@ export default function BorrowerOperationsPanel() {
 
               <input
                 type="number"
-                value={openTroveDebt}
+                value={openTroveDebt ?? ""}
                 onChange={(e) => setOpenTroveDebt(parseFloat(e.target.value))}
                 placeholder="Debt (MUSD)"
                 className="w-full px-4 py-3 bg-white/[0.02] border border-white/[0.08] rounded-xl text-mezo-dark-50 font-mono focus:border-purple-500/50 focus:outline-none placeholder-mezo-dark-400"
@@ -741,7 +741,7 @@ export default function BorrowerOperationsPanel() {
 
             <input
               type="number"
-              value={collateralAmount}
+              value={collateralAmount ?? ""}
               onChange={(e) =>
                 setCollateralAmount(parseFloat(e.target.value) || 0)
               }
@@ -813,7 +813,7 @@ export default function BorrowerOperationsPanel() {
 
             <input
               type="number"
-              value={musdAmount}
+              value={musdAmount ?? ""}
               onChange={(e) => setMusdAmount(parseFloat(e.target.value) || 0)}
               placeholder="Amount (MUSD)"
               className="w-full px-4 py-3 bg-white/[0.02] border border-white/[0.08] rounded-xl text-mezo-dark-50 font-mono focus:border-mezo-musd-500/50 focus:outline-none placeholder-mezo-dark-400"

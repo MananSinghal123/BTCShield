@@ -11,7 +11,7 @@ export const CollateralGauge = ({
   liquidationThreshold = 1.1,
 }: CollateralGaugeProps) => {
   const normalizedRatio = ratio || 0;
-  const percentage = Math.min((normalizedRatio / 3) * 100, 100);
+  const percentage = Math.min(normalizedRatio * 100, 100);
 
   const getColor = () => {
     if (normalizedRatio >= 2.0) return "#10b981";
