@@ -235,6 +235,8 @@ export default function BorrowerOperationsPanel() {
       await waitForTransaction(hash);
       alert("✅ Collateral added successfully!");
       await fetchTroveData(); // Add this
+      await fetchICRData();
+      await fetchSystemStats();
       setCollateralAmount(0);
     } catch (err: any) {
       alert(`❌ Failed to add collateral:\n${extractErrorMessage(err)}`);
@@ -255,6 +257,8 @@ export default function BorrowerOperationsPanel() {
       await waitForTransaction(hash);
       alert("✅ Collateral withdrawn successfully!");
       await fetchTroveData(); // Add this
+      await fetchICRData();
+      await fetchSystemStats();
       setCollateralAmount(0);
     } catch (err: any) {
       alert(`❌ Failed to withdraw collateral:\n${extractErrorMessage(err)}`);
@@ -275,6 +279,8 @@ export default function BorrowerOperationsPanel() {
       await waitForTransaction(hash);
       alert("✅ MUSD borrowed successfully!");
       await fetchTroveData(); // Add this
+      await fetchICRData();
+      await fetchSystemStats();
       setMusdAmount(0);
     } catch (err: any) {
       alert(`❌ Failed to borrow MUSD:\n${extractErrorMessage(err)}`);
@@ -295,6 +301,8 @@ export default function BorrowerOperationsPanel() {
       await waitForTransaction(hash);
       alert("✅ MUSD repaid successfully!");
       await fetchTroveData(); // Add this
+      await fetchICRData();
+      await fetchSystemStats();
       setMusdAmount(0);
     } catch (err: any) {
       alert(`❌ Failed to repay MUSD:\n${extractErrorMessage(err)}`);
@@ -316,6 +324,8 @@ export default function BorrowerOperationsPanel() {
 
       alert("✅ Collateral claimed successfully!");
       await fetchTroveData(); // Add this
+      await fetchICRData();
+      await fetchSystemStats();
     } catch (err: any) {
       alert(`❌ Failed to claim collateral:\n${extractErrorMessage(err)}`);
     } finally {
@@ -335,6 +345,8 @@ export default function BorrowerOperationsPanel() {
       await waitForTransaction(hash);
       alert("✅ Trove opened successfully!");
       await fetchTroveData(); // Add this
+      await fetchICRData();
+      await fetchSystemStats();
       setOpenTroveDebt(0);
       setOpenTroveCollateral(0);
     } catch (err: any) {
@@ -360,6 +372,8 @@ export default function BorrowerOperationsPanel() {
       const hash = await closeTrove();
       await waitForTransaction(hash);
       await fetchTroveData(); // Add this
+      await fetchICRData();
+      await fetchSystemStats();
       alert("✅ Trove closed successfully!");
     } catch (err: any) {
       alert(`❌ Failed to close trove:\n${extractErrorMessage(err)}`);
@@ -662,9 +676,10 @@ export default function BorrowerOperationsPanel() {
               {/* <label htmlFor="open-trove-collateral">Collateral (BTC)</label> */}
               <input
                 type="number"
+                min={0}
                 value={openTroveCollateral ?? ""}
                 onChange={(e) =>
-                  setOpenTroveCollateral(parseFloat(e.target.value))
+                  setOpenTroveCollateral(parseFloat(e.target.value) || 0)
                 }
                 placeholder="Collateral (BTC)"
                 className="w-full px-4 py-3 bg-white/[0.02] border border-white/[0.08] rounded-xl text-mezo-dark-50 font-mono focus:border-purple-500/50 focus:outline-none placeholder-mezo-dark-400"
@@ -682,8 +697,11 @@ export default function BorrowerOperationsPanel() {
 
               <input
                 type="number"
+                min={0}
                 value={openTroveDebt ?? ""}
-                onChange={(e) => setOpenTroveDebt(parseFloat(e.target.value))}
+                onChange={(e) =>
+                  setOpenTroveDebt(parseFloat(e.target.value) || 0)
+                }
                 placeholder="Debt (MUSD)"
                 className="w-full px-4 py-3 bg-white/[0.02] border border-white/[0.08] rounded-xl text-mezo-dark-50 font-mono focus:border-purple-500/50 focus:outline-none placeholder-mezo-dark-400"
                 disabled={!isConnected || isAnyLoading}

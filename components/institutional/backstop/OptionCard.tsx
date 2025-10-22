@@ -134,14 +134,14 @@ const OptionCard = ({
           </span>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-sm text-mezo-dark-300">Status</span>
+          {/* <span className="text-sm text-mezo-dark-300">Status</span>
           <span
             className={`font-mono text-sm ${
               hasMatured ? "text-orange-400" : "text-green-400"
             }`}
           >
             {hasMatured ? "Matured" : "Active"}
-          </span>
+          </span> */}
         </div>
       </div>
 

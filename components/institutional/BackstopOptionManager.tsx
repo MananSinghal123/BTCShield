@@ -495,7 +495,8 @@ export default function BackstopOptionManager({
           </h1>
         </div>
 
-        {option ? (
+        {option &&
+        option.borrower !== "0x0000000000000000000000000000000000000000" ? (
           <OptionCard
             option={option}
             userRole="borrower"
