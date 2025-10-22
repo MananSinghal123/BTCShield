@@ -36,7 +36,7 @@ Reference (open-access): [Mitigating Decentralized Finance Liquidations with Rev
 ### Lifecycle Phases
 
 1. **Initialization**
-    - Trigger: health factor < 1 (position becomes undercollateralized)
+    - Trigger: health factor < 1.53 (position becomes unhealthy)
     - Action: supporters can deposit `λ × C_t0`
 2. **Pre‑Maturity**
     - Borrower may “terminate” by paying `C_re=λ⋅C_t0⋅(1+I_L)⋅k_re` (0 < k_re < 1)
@@ -48,7 +48,8 @@ Reference (open-access): [Mitigating Decentralized Finance Liquidations with Rev
 ## 🏗️ Architecture
 
 ### Core Modules
-<!-- To be detailed in codebase, e.g., VaultManager, RCOManager, PricingEngine, SimulationEngine -->
+Head over to : (https://github.com/MananSinghal123/musd)
+<!-- To be detailed in codebase, e.g., TroveManager, RCOManager, BorrowerOperations, MUSD -->
 
 ### Data Flow
 <!-- Add diagrams and specs in docs/architecture.md -->
@@ -88,18 +89,15 @@ Navigate to [http://localhost:3000](http://localhost:3000/)
 
 ## 🎨 UI Components
 
-- **BTCShieldVault**: Phase indicators and actions (support, terminate, settle)
-- **Supporter Panel**: λ vs λ* and ROI visuals
-- **Risk Engine Panel**: Health indices, liquidation probabilities, forecasts
+- **Dashboard**: Current Position and Borrow operations
+- **Support**: Create Support Option and Manage them
+- **Marketplace**: Lists Support Options
 
 ## 📈 Simulation & Analysis
-
-- **Collateral Release Reduction**: Preserved collateral under backstop
+  (To be included)
 - **Health Factor Recovery**: Trajectory with support
 - **Supporter Profitability**: ROI distributions
-- **Scenario Tests**: Shock trajectories and recovery
 
-Simulation results adapted from Qin et al. (2023) indicate reversible‑call backstops can substantially reduce collateral release under certain parameter settings. BTCShield implements the same primitive; the exact benefit depends on chosen parameters (`λ`, `ΔT`, buffer `B`), asset liquidity, and market conditions. See `docs/simulations.md` for replication setup, datasets, and assumptions.
 
 ## 🧭 Future Implementations
 
