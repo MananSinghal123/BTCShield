@@ -48,7 +48,9 @@ const OptionCard = ({
 
   const canDefault =
     now >= option.maturityTime + 86400 &&
-    option.phase !== OptionPhase.Defaulted;
+    option.phase !== OptionPhase.Defaulted &&
+    option.phase !== OptionPhase.Exercised &&
+    option.phase !== OptionPhase.Terminated;
 
   return (
     <motion.div

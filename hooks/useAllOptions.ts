@@ -15,6 +15,9 @@ const CONTRACT_ADDRESS = process.env
 
 const RPC_URL = "https://rpc.test.mezo.org";
 
+// Add your Goldsky subgraph endpoint
+const SUBGRAPH_URL = process.env.NEXT_PUBLIC_SUBGRAPH_URL as string;
+
 const MEZO_TESTNET = {
   id: 31611,
   name: "Mezo Testnet",
@@ -26,19 +29,17 @@ export function useAllOptions() {
   const { address } = useAccount();
   const { data: walletClient } = useWalletClient();
 
-  // Use wagmi's usePublicClient with multicall batching enabled
   const publicClient = usePublicClient({
     chainId: 31611,
   });
 
-  // Fallback public client with multicall batching enabled
   const fallbackPublicClient = useMemo(
     () =>
       createPublicClient({
         transport: http(RPC_URL),
         chain: MEZO_TESTNET,
         batch: {
-          multicall: true, // Enable multicall batching
+          multicall: true,
         },
       }),
     []
@@ -46,7 +47,6 @@ export function useAllOptions() {
 
   const client = publicClient || fallbackPublicClient;
 
-  // Create contract instance with getContract for optimized read operations
   const contract = useMemo(
     () =>
       getContract({
@@ -57,111 +57,116 @@ export function useAllOptions() {
     [client]
   );
 
-  // Fetch available options for supporters
+  // Fetch available options from subgraph
   async function fetchAvailableOptions() {
-    const currentBlock = await client.getBlockNumber();
-    const fromBlock = BigInt(8067900); // Last ~2 days
-    const maxBlockRange = BigInt(10000); // RPC limit
+    try {
+      // GraphQL query to fetch unique borrowers with their latest option
+      const query = `
+        {
+          optionInitializeds(first: 100, orderDirection: desc) {
+            id
+            borrower
+            lambda
+            premium
+            strikeCR
+            maturityTime
+          }
+        }
+      `;
 
-    // Chunk the block range into batches
-    const allEvents = [];
-    let currentFromBlock = fromBlock;
+      console.log("Fetching options from subgraph...");
 
-    while (currentFromBlock <= currentBlock) {
-      const currentToBlock =
-        currentFromBlock + maxBlockRange - BigInt(1) > currentBlock
-          ? currentBlock
-          : currentFromBlock + maxBlockRange - BigInt(1);
+      // Fetch from subgraph
+      const response = await fetch(SUBGRAPH_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ query }),
+      });
+
+      const { data, errors } = await response.json();
+      console.log("Subgraph response data:", data);
+
+      if (errors) {
+        console.error("Subgraph query errors:", errors);
+        throw new Error("Failed to fetch from subgraph");
+      }
 
       console.log(
-        `Fetching events from block ${currentFromBlock} to ${currentToBlock}`
+        "Fetched OptionInitialized events from subgraph:",
+        data.optionInitializeds
       );
 
-      const events = await client.getLogs({
-        address: CONTRACT_ADDRESS,
-        event: {
-          type: "event",
-          name: "OptionInitialized",
-          inputs: [
-            { type: "address", name: "borrower", indexed: true },
-            { type: "uint256", name: "lambda" },
-            { type: "uint256", name: "premium" },
-            { type: "uint256", name: "strikeCR" },
-            { type: "uint256", name: "maturityTime" },
-          ],
-        },
-        fromBlock: currentFromBlock,
-        toBlock: currentToBlock,
+      // Get unique borrowers (most recent option per borrower)
+      const borrowerMap = new Map();
+      data.optionInitializeds.forEach((event: any) => {
+        if (!borrowerMap.has(event.borrower)) {
+          borrowerMap.set(event.borrower, event);
+        }
       });
 
-      allEvents.push(...events);
-      currentFromBlock = currentToBlock + BigInt(1);
+      const uniqueBorrowers = Array.from(borrowerMap.keys());
+      console.log("Unique borrowers:", uniqueBorrowers);
+
+      const availableOptions = [];
+
+      // Fetch current option state for each borrower
+      for (const borrower of uniqueBorrowers) {
+        try {
+          const option = (await contract.read.getOption([
+            borrower,
+          ])) as BackstopOption;
+
+          console.log(`Fetched option for borrower ${borrower}:`, option);
+
+          const {
+            supporter,
+            collateralAtStart,
+            debtAtStart,
+            lambda,
+            premium,
+            strikeCR,
+            startTime,
+            maturityTime,
+            interestRate,
+            phase,
+            exists,
+          } = option as any;
+
+          // Only include existing options
+          if (exists) {
+            availableOptions.push({
+              borrower: borrower as `0x${string}`,
+              supporter: supporter as `0x${string}`,
+              collateralAtStart: formatEther(collateralAtStart),
+              debtAtStart: formatEther(debtAtStart),
+              lambda: formatEther(lambda),
+              premium: formatEther(premium),
+              strikeCR: formatEther(strikeCR),
+              startTime: Number(startTime),
+              maturityTime: Number(maturityTime),
+              interestRate: formatEther(interestRate),
+              phase: Number(phase) as OptionPhase,
+              exists: Boolean(exists),
+            });
+          }
+        } catch (error) {
+          console.error(
+            `Error fetching option for borrower ${borrower}:`,
+            error
+          );
+        }
+      }
+
+      console.log("Available Options for Supporters:", availableOptions);
+
+      return availableOptions;
+    } catch (error) {
+      console.error("Error fetching options from subgraph:", error);
+      // Fallback to empty array or throw error
+      return [];
     }
-
-    console.log("Fetched OptionInitialized events:", allEvents);
-
-    const uniqueBorrowers = Array.from(
-      new Set(allEvents.map((event) => event.args.borrower))
-    );
-
-    // const price = await priceFeed.read.fetchPrice();
-    const availableOptions = [];
-
-    for (const borrower of uniqueBorrowers) {
-      // const borrower = event.args.borrower;
-      // const option = (await contract.read.getOption([
-      //   borrower,
-      // ])) as BackstopOption;
-
-      const option = (await contract.read.getOption([
-        borrower,
-      ])) as BackstopOption;
-
-      console.log(`Fetched option for borrower ${borrower}:`, option);
-
-      // Only show options in Initialization phase (waiting for supporter)
-      // if (option.phase === 1) {
-      // OptionPhase.Initialization
-      // const currentICR = await troveManager.read.getCurrentICR([
-      //   borrower,
-      //   price,
-      // ]);
-
-      const {
-        // borrower,
-        supporter,
-        collateralAtStart,
-        debtAtStart,
-        lambda,
-        premium,
-        strikeCR,
-        startTime,
-        maturityTime,
-        interestRate,
-        phase,
-        exists,
-      } = option as any;
-
-      availableOptions.push({
-        borrower: borrower as `0x${string}`,
-        supporter: supporter as `0x${string}`,
-        collateralAtStart: formatEther(collateralAtStart),
-        debtAtStart: formatEther(debtAtStart),
-        lambda: formatEther(lambda),
-        premium: formatEther(premium),
-        strikeCR: formatEther(strikeCR),
-        startTime: Number(startTime),
-        maturityTime: Number(maturityTime),
-        interestRate: formatEther(interestRate),
-        phase: Number(phase) as OptionPhase,
-        exists: Boolean(exists),
-      });
-      // }
-    }
-
-    console.log("Available Options for Supporters:", availableOptions);
-
-    return availableOptions;
   }
 
   function calculateProfitPotential(option: any, price: bigint) {
