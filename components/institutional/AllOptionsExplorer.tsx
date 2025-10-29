@@ -64,7 +64,7 @@ const OptionsList = () => {
 
     // Phase filter
     if (phaseFilter !== "all") {
-      filtered = filtered.filter((opt) => opt.phase === phaseFilter);
+      filtered = filtered.filter((opt) => opt.phase === Number(phaseFilter));
     }
 
     // Role filter
@@ -242,12 +242,12 @@ const OptionsList = () => {
               className="px-4 py-2 bg-mezo-dark-800 border border-mezo-dark-700 rounded-lg text-mezo-dark-50 focus:outline-none focus:border-mezo-btc-500"
             >
               <option value="all">All Phases</option>
-              <option value={OptionPhase.Initialization}>Initialization</option>
-              <option value={OptionPhase.PreMaturity}>Pre-Maturity</option>
-              <option value={OptionPhase.Maturity}>Maturity</option>
-              <option value={OptionPhase.Exercised}>Exercised</option>
-              <option value={OptionPhase.Defaulted}>Defaulted</option>
-              <option value={OptionPhase.Terminated}>Terminated</option>
+              <option value={0}>Initialization</option>
+              <option value={1}>Pre-Maturity</option>
+              <option value={2}>Maturity</option>
+              <option value={3}>Exercised</option>
+              <option value={4}>Defaulted</option>
+              <option value={5}>Terminated</option>
             </select>
 
             {/* Role Filter */}
