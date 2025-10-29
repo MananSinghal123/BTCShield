@@ -23,6 +23,9 @@ const OptionsList = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [phaseFilter, setPhaseFilter] = useState<"all" | OptionPhase>("all");
+  const [terminationFees, setTerminationFees] = useState<number>(0);
+  const { getTerminationFee } = useRcoManager();
+
   const [roleFilter, setRoleFilter] = useState<
     "all" | "borrower" | "supporter"
   >("all");
@@ -37,6 +40,20 @@ const OptionsList = () => {
   useEffect(() => {
     applyFilters();
   }, [options, searchQuery, phaseFilter, roleFilter, sortBy]);
+
+  // Fetch termination fees for each option
+  useEffect(() => {
+    async function fetchTerminationFees() {
+      try {
+        const fees = await getTerminationFee(address as `0x${string}`);
+        setTerminationFees(fees);
+      } catch (error) {
+        console.error("Error fetching termination fees:", error);
+      }
+    }
+
+    fetchTerminationFees();
+  }, [getTerminationFee]);
 
   const loadOptions = async () => {
     setIsLoading(true);
@@ -307,6 +324,7 @@ const OptionsList = () => {
                 <OptionCard
                   option={option}
                   userRole={getUserRole(option)}
+                  terminationFee={terminationFees}
                   onTerminateEarly={(terminationFee) =>
                     terminateEarly(terminationFee || 0)
                   }
