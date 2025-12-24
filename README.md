@@ -6,8 +6,6 @@ A professional implementation of the BTCShield backstop protection system using 
 
 BTCShield implements a three-phase backstop mechanism to mitigate DeFi liquidations through reversible call options, specifically designed for Mezo Network's BTC/MUSD lending environment. The design draws on the academic foundation of reversible call options for liquidation mitigation.
 
-Reference (open-access): [Mitigating Decentralized Finance Liquidations with Reversible Call Options](https://arxiv.org/pdf/2303.15162)
-
 ## 🔑 Key Features
 
 - **Three-Phase System**: Initialization → Pre-Maturity → Maturity
