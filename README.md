@@ -46,7 +46,7 @@ BTCShield implements a three-phase backstop mechanism to mitigate DeFi liquidati
 ## 🏗️ Architecture
 
 ### Core Modules
-Head over to : (https://github.com/OpturaFi/musd)
+Head over to : ([https://github.com/OpturaFi/musd](https://github.com/MananSinghal123/musd))
 <!-- To be detailed in codebase, e.g., TroveManager, RCOManager, BorrowerOperations, MUSD -->
 
 ### Data Flow
